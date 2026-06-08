@@ -15,11 +15,7 @@ const game = new Phaser.Game(config);
 function preload() {}
 
 function create() {
-  this.add.text(640, 360, 'Makeshift Racers', {
-    fontSize: '48px',
-    color: '#e8c14a',
-    fontFamily: 'Arial'
-  }).setOrigin(0.5);
+  this.track = new Track(this);
 }
 
 function update() {}
