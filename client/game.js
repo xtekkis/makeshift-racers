@@ -46,6 +46,10 @@ function create() {
 
   this.playerAngle = 0;
   this.playerSpeed = 0;
+
+  this.cameras.main.setBounds(0, 0, 1280, 720);
+  this.cameras.main.startFollow(this.playerBody, true, 0.1, 0.1);
+  this.cameras.main.setZoom(1);
 }
 
 function update() {
@@ -75,4 +79,10 @@ function update() {
 
   player.x = this.playerBody.x;
   player.y = this.playerBody.y;
+
+  // camera smoothly follows players
+  this.cameras.main.setFollowOffset(
+    -(this.playerBody.x - 640),
+    -(this.playerBody.y - 360)
+  );
 }
