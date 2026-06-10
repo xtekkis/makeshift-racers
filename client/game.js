@@ -52,6 +52,7 @@ function create() {
   this.cameras.main.setZoom(1);
 
   window.gameScene = this;
+  this.otherPlayers = {};
   connectToServer("Player1");
 }
 
@@ -92,7 +93,28 @@ function update() {
 }
 
 function updatePlayers(players) {
-  // we'll fill this in next commit
+  const scene = window.gameScene;
+  if (!scene) return;
+
+  Object.keys(players).forEach((id) => {
+    const p = players[id];
+
+    if (!scene.otherPlayers[id]) {
+      const color = 0x4a8fe8;
+      scene.otherPlayers[id] = scene.add.circle(p.x, p.y, 12, color);
+      scene.otherPlayers[id].setDepth(1);
+    } else {
+      scene.otherPlayers[id].x = p.x;
+      scene.otherPlayers[id].y = p.y;
+    }
+  });
+
+  Object.keys(scene.otherPlayers).forEach((id) => {
+    if (!players[id]) {
+      scene.otherPlayers[id].destroy();
+      delete scene.otherPlayers[id];
+    }
+  });
 }
 
 window.updatePlayers = updatePlayers;
