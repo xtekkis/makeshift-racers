@@ -20,6 +20,10 @@ const game = new Phaser.Game(config);
 
 let player;
 let cursors;
+let isDead = false;
+let deathTimer = 0;
+const RESPAWN_X = 150;
+const RESPAWN_Y = 400;
 
 function preload() { }
 
@@ -59,6 +63,27 @@ function create() {
 function update() {
   const speed = 180;
   const turnSpeed = 3;
+
+  if (isDead) {
+    deathTimer -= 16;
+    if (deathTimer <= 0) {
+      isDead = false;
+      this.playerBody.x = RESPAWN_X;
+      this.playerBody.y = RESPAWN_Y;
+      player.x = RESPAWN_X;
+      player.y = RESPAWN_Y;
+      player.setAlpha(1);
+    }
+    return;
+  }
+
+  if (this.track.isOffTrack(this.playerBody.x, this.playerBody.y)) {
+    isDead = true;
+    deathTimer = 2000;
+    this.playerSpeed = 0;
+    player.setAlpha(0.3);
+    console.log("Player died!");
+  }
 
   if (cursors.left.isDown || this.wasd.left.isDown) {
     this.playerAngle -= turnSpeed;

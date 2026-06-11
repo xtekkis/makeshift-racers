@@ -36,4 +36,21 @@ class Track {
     g.lineBetween(1030, 520, 1180, 520); // checkpoint 4
     g.lineBetween(100, 520, 250, 520);   // checkpoint 5
   }
+
+  isOffTrack(x, y) {
+    const outerLeft = 100;
+    const outerRight = 1180;
+    const outerTop = 100;
+    const outerBottom = 620;
+
+    const innerLeft = 250;
+    const innerRight = 1030;
+    const innerTop = 200;
+    const innerBottom = 520;
+
+    const outsideBounds = x < outerLeft || x > outerRight || y < outerTop || y > outerBottom;
+    const insideInner = x > innerLeft && x < innerRight && y > innerTop && y < innerBottom;
+
+    return outsideBounds || insideInner;
+  }
 }
