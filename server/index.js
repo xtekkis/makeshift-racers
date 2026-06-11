@@ -5,9 +5,20 @@ const wss = new WebSocket.Server({ port: PORT });
 
 const rooms = {};
 
+const startPositions = [
+  { x: 150, y: 400 },
+  { x: 200, y: 440 },
+  { x: 150, y: 480 },
+  { x: 200, y: 520 }
+];
+
+let playerCount = 0;
+
 wss.on("connection", (ws) => {
   const sessionId = Math.random().toString(36).substring(2, 9);
   ws.sessionId = sessionId;
+
+  ws.send(JSON.stringify({ type: "init", sessionId: sessionId }));
 
   console.log(sessionId, "connected");
 
@@ -15,9 +26,16 @@ wss.on("connection", (ws) => {
     const data = JSON.parse(message);
 
     if (data.type === "join") {
+      if (Object.keys(rooms).length >= 4) {
+        ws.send(JSON.stringify({ type: "full" }));
+        ws.close();
+        return;
+      }
+      const pos = startPositions[playerCount % 4];
+      playerCount++;
       rooms[sessionId] = {
-        x: 175,
-        y: 360,
+        x: pos.x,
+        y: pos.y,
         angle: 0,
         name: data.name || "Player"
       };

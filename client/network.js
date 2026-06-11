@@ -11,6 +11,12 @@ function connectToServer(playerName) {
 
   socket.onmessage = (event) => {
     const data = JSON.parse(event.data);
+
+    if (data.type === "init") {
+      mySessionId = data.sessionId;
+      console.log("My session ID:", mySessionId);
+    }
+
     if (data.type === "players") {
       updateOtherPlayers(data.players);
     }
@@ -33,6 +39,6 @@ function sendMove(x, y, angle) {
 
 function updateOtherPlayers(players) {
   if (window.updatePlayers) {
-    window.updatePlayers(players);
+    window.updatePlayers(players, mySessionId);
   }
 }

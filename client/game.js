@@ -21,7 +21,7 @@ const game = new Phaser.Game(config);
 let player;
 let cursors;
 
-function preload() {}
+function preload() { }
 
 function create() {
   this.track = new Track(this);
@@ -44,7 +44,7 @@ function create() {
     right: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D)
   };
 
-  this.playerAngle = 0;
+  this.playerAngle = -90;
   this.playerSpeed = 0;
 
   this.cameras.main.setBounds(0, 0, 1280, 720);
@@ -92,16 +92,23 @@ function update() {
   sendMove(this.playerBody.x, this.playerBody.y, this.playerAngle);
 }
 
-function updatePlayers(players) {
+function updatePlayers(players, myId) {
   const scene = window.gameScene;
   if (!scene) return;
 
-  Object.keys(players).forEach((id) => {
-    const p = players[id];
+  if (myId && players[myId] && !scene.positionSet) {
+    scene.playerBody.x = players[myId].x;
+    scene.playerBody.y = players[myId].y;
+    player.x = players[myId].x;
+    player.y = players[myId].y;
+    scene.positionSet = true;
+  }
 
+  Object.keys(players).forEach((id) => {
+    if (id === myId) return;
+    const p = players[id];
     if (!scene.otherPlayers[id]) {
-      const color = 0x4a8fe8;
-      scene.otherPlayers[id] = scene.add.circle(p.x, p.y, 12, color);
+      scene.otherPlayers[id] = scene.add.circle(p.x, p.y, 12, 0x4a8fe8);
       scene.otherPlayers[id].setDepth(1);
     } else {
       scene.otherPlayers[id].x = p.x;
