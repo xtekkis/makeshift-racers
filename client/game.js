@@ -36,6 +36,7 @@ function preload() {}
 
 function create() {
   this.track = new Track(this);
+  this.indicators = new Indicators(this);
 
   player = this.physics.add.image(175, 360, null);
   player = this.add.circle(175, 360, 12, 0xe8c14a);
@@ -150,6 +151,10 @@ function update() {
     -(this.playerBody.y - 360)
   );
 
+  if (window.lastPlayers) {
+    this.indicators.update(window.lastPlayers, mySessionId);
+  }
+  
   sendMove(this.playerBody.x, this.playerBody.y, this.playerAngle);
 }
 

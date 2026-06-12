@@ -47,6 +47,7 @@ function sendMove(x, y, angle) {
 }
 
 function updateOtherPlayers(players) {
+  window.lastPlayers = players;
   if (window.updatePlayers) {
     window.updatePlayers(players, mySessionId);
   }
