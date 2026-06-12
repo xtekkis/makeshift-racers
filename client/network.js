@@ -17,8 +17,17 @@ function connectToServer(playerName) {
       console.log("My session ID:", mySessionId);
     }
 
+    if (data.type === "playerNumber") {
+      window.myPlayerNumber = data.number;
+      console.log("My player number:", data.number);
+    }
+
     if (data.type === "players") {
       updateOtherPlayers(data.players);
+    }
+
+    if (data.type === "full") {
+      console.log("Room is full!");
     }
   };
 

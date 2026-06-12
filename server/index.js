@@ -32,14 +32,17 @@ wss.on("connection", (ws) => {
         return;
       }
       const pos = startPositions[playerCount % 4];
+      const playerNumber = playerCount % 4;
       playerCount++;
       rooms[sessionId] = {
         x: pos.x,
         y: pos.y,
         angle: 0,
-        name: data.name || "Player"
+        name: data.name || "Player",
+        playerNumber: playerNumber
       };
       console.log(sessionId, "joined as", data.name);
+      ws.send(JSON.stringify({ type: "playerNumber", number: playerNumber }));
       broadcast({ type: "players", players: rooms });
     }
 

@@ -22,10 +22,17 @@ let player;
 let cursors;
 let isDead = false;
 let deathTimer = 0;
-const RESPAWN_X = 150;
-const RESPAWN_Y = 400;
+let outOfBoundsTimer = 0;
+const OUT_OF_BOUNDS_LIMIT = 2000;
 
-function preload() { }
+const RESPAWN_POSITIONS = [
+  { x: 150, y: 400, angle: -90 },
+  { x: 200, y: 440, angle: -90 },
+  { x: 150, y: 480, angle: -90 },
+  { x: 200, y: 520, angle: -90 }
+];
+
+function preload() {}
 
 function create() {
   this.track = new Track(this);
@@ -68,10 +75,12 @@ function update() {
     deathTimer -= 16;
     if (deathTimer <= 0) {
       isDead = false;
-      this.playerBody.x = RESPAWN_X;
-      this.playerBody.y = RESPAWN_Y;
-      player.x = RESPAWN_X;
-      player.y = RESPAWN_Y;
+      const pos = RESPAWN_POSITIONS[window.myPlayerNumber || 0];
+      this.playerBody.x = pos.x;
+      this.playerBody.y = pos.y;
+      player.x = pos.x;
+      player.y = pos.y;
+      this.playerAngle = pos.angle;
       player.setAlpha(1);
     }
     return;
@@ -83,6 +92,33 @@ function update() {
     this.playerSpeed = 0;
     player.setAlpha(0.3);
     console.log("Player died!");
+  }
+
+  const cam = this.cameras.main;
+  const camLeft = cam.scrollX;
+  const camRight = cam.scrollX + cam.width;
+  const camTop = cam.scrollY;
+  const camBottom = cam.scrollY + cam.height;
+  const margin = 20;
+
+  const isOutOfView =
+    this.playerBody.x < camLeft - margin ||
+    this.playerBody.x > camRight + margin ||
+    this.playerBody.y < camTop - margin ||
+    this.playerBody.y > camBottom + margin;
+
+  if (isOutOfView) {
+    outOfBoundsTimer += 16;
+    if (outOfBoundsTimer >= OUT_OF_BOUNDS_LIMIT) {
+      isDead = true;
+      deathTimer = 2000;
+      outOfBoundsTimer = 0;
+      this.playerSpeed = 0;
+      player.setAlpha(0.3);
+      console.log("Player out of bounds!");
+    }
+  } else {
+    outOfBoundsTimer = 0;
   }
 
   if (cursors.left.isDown || this.wasd.left.isDown) {
