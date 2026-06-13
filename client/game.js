@@ -26,10 +26,10 @@ let outOfBoundsTimer = 0;
 const OUT_OF_BOUNDS_LIMIT = 2000;
 
 const RESPAWN_POSITIONS = [
-  { x: 150, y: 400, angle: -90 },
-  { x: 200, y: 440, angle: -90 },
-  { x: 150, y: 480, angle: -90 },
-  { x: 200, y: 520, angle: -90 }
+  { x: 150, y: 350, angle: -90 },
+  { x: 150, y: 420, angle: -90 },
+  { x: 100, y: 380, angle: -90 },
+  { x: 100, y: 450, angle: -90 }
 ];
 
 function preload() {}
@@ -38,14 +38,13 @@ function create() {
   this.track = new Track(this);
   this.indicators = new Indicators(this);
 
-  player = this.physics.add.image(175, 360, null);
-  player = this.add.circle(175, 360, 12, 0xe8c14a);
+  player = this.physics.add.image(150, 380, null);
+  player = this.add.circle(150, 380, 12, 0xe8c14a);
   player.setDepth(1);
 
   this.playerBody = this.physics.add.existing(
-    this.add.rectangle(175, 360, 24, 24, 0x000000, 0)
+    this.add.rectangle(150, 380, 24, 24, 0x000000, 0)
   );
-  this.playerBody.body.setCollideWorldBounds(true);
   this.playerBody.body.setMaxVelocity(200, 200);
 
   cursors = this.input.keyboard.createCursorKeys();
@@ -59,9 +58,10 @@ function create() {
   this.playerAngle = -90;
   this.playerSpeed = 0;
 
-  this.cameras.main.setBounds(0, 0, 1280, 720);
-  this.cameras.main.startFollow(this.playerBody, true, 0.1, 0.1);
+  this.cameras.main.setBounds(0, 0, 4000, 800);
   this.cameras.main.setZoom(1);
+  this.physics.world.setBounds(0, 0, 4000, 800);
+  this.playerBody.body.setCollideWorldBounds(true);
 
   window.gameScene = this;
   this.otherPlayers = {};
@@ -95,18 +95,13 @@ function update() {
     console.log("Player died!");
   }
 
-  const cam = this.cameras.main;
-  const camLeft = cam.scrollX;
-  const camRight = cam.scrollX + cam.width;
-  const camTop = cam.scrollY;
-  const camBottom = cam.scrollY + cam.height;
+  const leadX = window.furthestX || this.playerBody.x;
+  const scrollX = Math.max(0, leadX - 960);
   const margin = 20;
 
   const isOutOfView =
-    this.playerBody.x < camLeft - margin ||
-    this.playerBody.x > camRight + margin ||
-    this.playerBody.y < camTop - margin ||
-    this.playerBody.y > camBottom + margin;
+    this.playerBody.x < scrollX - margin ||
+    this.playerBody.x > scrollX + 1280 + margin;
 
   if (isOutOfView) {
     outOfBoundsTimer += 16;
@@ -146,15 +141,12 @@ function update() {
   player.x = this.playerBody.x;
   player.y = this.playerBody.y;
 
-  this.cameras.main.setFollowOffset(
-    -(this.playerBody.x - 640),
-    -(this.playerBody.y - 360)
-  );
+  this.cameras.main.setScroll(scrollX, 0);
 
   if (window.lastPlayers) {
     this.indicators.update(window.lastPlayers, mySessionId);
   }
-  
+
   sendMove(this.playerBody.x, this.playerBody.y, this.playerAngle);
 }
 

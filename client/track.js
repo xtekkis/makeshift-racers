@@ -2,54 +2,74 @@ class Track {
   constructor(scene) {
     this.scene = scene;
     this.graphics = scene.add.graphics();
+    this.width = 4000;
+    this.height = 800;
     this.draw();
   }
 
   draw() {
     const g = this.graphics;
 
-    // outer boundary
-    g.lineStyle(4, 0x888888, 1);
-    g.strokeRect(100, 100, 1080, 520);
-
-    // inner boundary (creates the track shape)
-    g.lineStyle(4, 0x888888, 1);
-    g.strokeRect(250, 200, 780, 320);
-
     // track surface
     g.fillStyle(0x2a2a3a, 1);
-    g.fillRect(100, 100, 1080, 520);
+    g.fillRect(0, 100, this.width, 600);
 
     // inner grass
     g.fillStyle(0x1a3a1a, 1);
-    g.fillRect(250, 200, 780, 320);
+    g.fillRect(200, 250, this.width - 400, 300);
+
+    // outer boundary top
+    g.lineStyle(6, 0x888888, 1);
+    g.lineBetween(0, 100, this.width, 100);
+
+    // outer boundary bottom
+    g.lineBetween(0, 700, this.width, 700);
+
+    // inner boundary top
+    g.lineStyle(4, 0x555555, 1);
+    g.lineBetween(200, 250, this.width - 200, 250);
+
+    // inner boundary bottom
+    g.lineBetween(200, 550, this.width - 200, 550);
 
     // start line
-    g.lineStyle(4, 0xe8c14a, 1);
-    g.lineBetween(100, 360, 250, 360);
+    g.lineStyle(6, 0xe8c14a, 1);
+    g.lineBetween(200, 100, 200, 250);
+    g.lineBetween(200, 550, 200, 700);
 
     // checkpoints
-    g.lineStyle(3, 0x4a8fe8, 0.6);
-    g.lineBetween(100, 200, 250, 200);  // checkpoint 1
-    g.lineBetween(1030, 200, 1180, 200); // checkpoint 2
-    g.lineBetween(1030, 360, 1180, 360); // checkpoint 3
-    g.lineBetween(1030, 520, 1180, 520); // checkpoint 4
-    g.lineBetween(100, 520, 250, 520);   // checkpoint 5
+    g.lineStyle(4, 0x4a8fe8, 0.6);
+    g.lineBetween(800, 100, 800, 250);
+    g.lineBetween(800, 550, 800, 700);
+
+    g.lineBetween(1600, 100, 1600, 250);
+    g.lineBetween(1600, 550, 1600, 700);
+
+    g.lineBetween(2400, 100, 2400, 250);
+    g.lineBetween(2400, 550, 2400, 700);
+
+    g.lineBetween(3200, 100, 3200, 250);
+    g.lineBetween(3200, 550, 3200, 700);
+
+    g.lineBetween(3800, 100, 3800, 250);
+    g.lineBetween(3800, 550, 3800, 700);
+
+    // finish line
+    g.lineStyle(6, 0xe84a4a, 1);
+    g.lineBetween(3900, 100, 3900, 250);
+    g.lineBetween(3900, 550, 3900, 700);
   }
 
   isOffTrack(x, y) {
-    const outerLeft = 100;
-    const outerRight = 1180;
     const outerTop = 100;
-    const outerBottom = 620;
+    const outerBottom = 700;
+    const innerTop = 250;
+    const innerBottom = 550;
+    const trackStart = 0;
+    const trackEnd = 4000;
 
-    const innerLeft = 250;
-    const innerRight = 1030;
-    const innerTop = 200;
-    const innerBottom = 520;
-
-    const outsideBounds = x < outerLeft || x > outerRight || y < outerTop || y > outerBottom;
-    const insideInner = x > innerLeft && x < innerRight && y > innerTop && y < innerBottom;
+    const outsideBounds = x < trackStart || x > trackEnd || y < outerTop || y > outerBottom;
+    const insideInner = x > 200 && x < 3800 && y > innerTop && y < innerBottom;
 
     return outsideBounds || insideInner;
   }

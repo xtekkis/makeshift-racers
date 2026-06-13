@@ -23,6 +23,7 @@ function connectToServer(playerName) {
     }
 
     if (data.type === "players") {
+      window.furthestX = data.furthestX || 0;
       updateOtherPlayers(data.players);
     }
 

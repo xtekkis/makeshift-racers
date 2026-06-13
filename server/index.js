@@ -1,25 +1,20 @@
 const WebSocket = require("ws");
-
 const PORT = 3000;
 const wss = new WebSocket.Server({ port: PORT });
-
 const rooms = {};
-
 const startPositions = [
-  { x: 150, y: 400 },
-  { x: 200, y: 440 },
-  { x: 150, y: 480 },
-  { x: 200, y: 520 }
+  { x: 150, y: 350 },
+  { x: 150, y: 420 },
+  { x: 100, y: 380 },
+  { x: 100, y: 450 }
 ];
-
 let playerCount = 0;
+let cameraX = 0;
 
 wss.on("connection", (ws) => {
   const sessionId = Math.random().toString(36).substring(2, 9);
   ws.sessionId = sessionId;
-
   ws.send(JSON.stringify({ type: "init", sessionId: sessionId }));
-
   console.log(sessionId, "connected");
 
   ws.on("message", (message) => {
@@ -43,7 +38,7 @@ wss.on("connection", (ws) => {
       };
       console.log(sessionId, "joined as", data.name);
       ws.send(JSON.stringify({ type: "playerNumber", number: playerNumber }));
-      broadcast({ type: "players", players: rooms });
+      broadcast({ type: "players", players: rooms, furthestX: cameraX });
     }
 
     if (data.type === "move") {
@@ -51,7 +46,10 @@ wss.on("connection", (ws) => {
         rooms[sessionId].x = data.x;
         rooms[sessionId].y = data.y;
         rooms[sessionId].angle = data.angle;
-        broadcast({ type: "players", players: rooms });
+        let furthestX = 0;
+        Object.values(rooms).forEach((p) => { if (p.x > furthestX) furthestX = p.x; });
+        if (furthestX > cameraX) cameraX = furthestX;
+        broadcast({ type: "players", players: rooms, furthestX: cameraX });
       }
     }
   });
@@ -59,7 +57,12 @@ wss.on("connection", (ws) => {
   ws.on("close", () => {
     console.log(sessionId, "disconnected");
     delete rooms[sessionId];
-    broadcast({ type: "players", players: rooms });
+    if (Object.keys(rooms).length === 0) {
+      cameraX = 0;
+      playerCount = 0;
+      console.log("All players left, resetting game state");
+    }
+    broadcast({ type: "players", players: rooms, furthestX: cameraX });
   });
 });
 
