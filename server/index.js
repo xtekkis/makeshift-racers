@@ -3,10 +3,10 @@ const PORT = 3000;
 const wss = new WebSocket.Server({ port: PORT });
 const rooms = {};
 const startPositions = [
-  { x: 150, y: 350 },
-  { x: 150, y: 420 },
-  { x: 100, y: 380 },
-  { x: 100, y: 450 }
+  { x: 1900, y: 3600 },
+  { x: 1970, y: 3600 },
+  { x: 1900, y: 3670 },
+  { x: 1970, y: 3670 }
 ];
 let playerCount = 0;
 let cameraX = 0;
