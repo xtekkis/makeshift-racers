@@ -44,9 +44,9 @@ function connectToServer(playerName) {
   };
 }
 
-function sendMove(x, y, angle) {
+function sendMove(x, y, angle, dead) {
   if (socket && socket.readyState === WebSocket.OPEN) {
-    socket.send(JSON.stringify({ type: "move", x, y, angle }));
+    socket.send(JSON.stringify({ type: "move", x, y, angle, dead }));
   }
 }
 

@@ -34,7 +34,7 @@ const RESPAWN_POSITIONS = [
   { x: 1970, y: 3670, angle: 180 }
 ];
 
-function preload() {}
+function preload() { }
 
 function create() {
   this.track = new Track(this);
@@ -71,11 +71,11 @@ function create() {
 
 function getTargetOffset(direction) {
   switch (direction) {
-    case 'left':  return { x:  180, y: 0 };
+    case 'left': return { x: 180, y: 0 };
     case 'right': return { x: -180, y: 0 };
-    case 'up':    return { x: 0, y:  80 };
-    case 'down':  return { x: 0, y: -80 };
-    default:      return { x:  180, y: 0 };
+    case 'up': return { x: 0, y: 80 };
+    case 'down': return { x: 0, y: -80 };
+    default: return { x: 180, y: 0 };
   }
 }
 
@@ -85,16 +85,22 @@ function update() {
 
   if (isDead) {
     deathTimer -= 16;
-    if (deathTimer <= 0) {
-      isDead = false;
-      const pos = RESPAWN_POSITIONS[window.myPlayerNumber || 0];
-      this.playerBody.x = pos.x;
-      this.playerBody.y = pos.y;
-      player.x = pos.x;
-      player.y = pos.y;
-      this.playerAngle = pos.angle;
-      player.setAlpha(1);
+
+    const leaderX = window.leaderX || this.playerBody.x;
+    const leaderY = window.leaderY || this.playerBody.y;
+    const direction = window.leaderDirection || 'left';
+    const target = getTargetOffset(direction);
+    camOffsetX += (target.x - camOffsetX) * 0.05;
+    camOffsetY += (target.y - camOffsetY) * 0.05;
+    const scrollX = Math.max(0, Math.min(leaderX - 640 + camOffsetX, 6000 - 1280));
+    const scrollY = Math.max(0, Math.min(leaderY - 360 + camOffsetY, 5000 - 720));
+    this.cameras.main.setScroll(scrollX, scrollY);
+
+    if (window.lastPlayers) {
+      this.indicators.update(window.lastPlayers, mySessionId);
     }
+
+    sendMove(this.playerBody.x, this.playerBody.y, this.playerAngle, true);
     return;
   }
 
@@ -166,7 +172,7 @@ function update() {
     this.indicators.update(window.lastPlayers, mySessionId);
   }
 
-  sendMove(this.playerBody.x, this.playerBody.y, this.playerAngle);
+  sendMove(this.playerBody.x, this.playerBody.y, this.playerAngle, false);
 }
 
 function updatePlayers(players, myId) {
@@ -184,10 +190,19 @@ function updatePlayers(players, myId) {
   Object.keys(players).forEach((id) => {
     if (id === myId) return;
     const p = players[id];
+
+    if (p.dead) {
+      if (scene.otherPlayers[id]) {
+        scene.otherPlayers[id].setVisible(false);
+      }
+      return;
+    }
+
     if (!scene.otherPlayers[id]) {
       scene.otherPlayers[id] = scene.add.circle(p.x, p.y, 12, 0x4a8fe8);
       scene.otherPlayers[id].setDepth(1);
     } else {
+      scene.otherPlayers[id].setVisible(true);
       scene.otherPlayers[id].x = p.x;
       scene.otherPlayers[id].y = p.y;
     }

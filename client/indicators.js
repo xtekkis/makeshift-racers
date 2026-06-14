@@ -17,6 +17,13 @@ class Indicators {
       if (id === myId) return;
       const p = players[id];
 
+      if (p.dead) {
+        if (this.arrows[id]) {
+          this.arrows[id].setVisible(false);
+        }
+        return;
+      }
+
       const isOffScreen =
         p.x < camLeft || p.x > camRight || p.y < camTop || p.y > camBottom;
 
@@ -26,19 +33,15 @@ class Indicators {
           this.arrows[id].setDepth(10);
           this.arrows[id].setScrollFactor(0);
         }
-
         const screenCenterX = cam.width / 2;
         const screenCenterY = cam.height / 2;
         const targetX = p.x - cam.scrollX;
         const targetY = p.y - cam.scrollY;
-
         const angle = Math.atan2(targetY - screenCenterY, targetX - screenCenterX);
-
         const edgeX = Math.max(padding, Math.min(cam.width - padding,
           screenCenterX + Math.cos(angle) * 300));
         const edgeY = Math.max(padding, Math.min(cam.height - padding,
           screenCenterY + Math.sin(angle) * 300));
-
         this.arrows[id].x = edgeX;
         this.arrows[id].y = edgeY;
         this.arrows[id].rotation = angle + Math.PI / 2;

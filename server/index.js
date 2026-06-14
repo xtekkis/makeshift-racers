@@ -108,7 +108,8 @@ wss.on("connection", (ws) => {
         playerNumber: playerNumber,
         currentCheckpoint: 0,
         trackDistance: 0,
-        trackSegment: 0
+        trackSegment: 0,
+        dead: false
       };
       console.log(sessionId, "joined as", data.name);
       ws.send(JSON.stringify({ type: "playerNumber", number: playerNumber }));
@@ -128,27 +129,32 @@ wss.on("connection", (ws) => {
         player.x = data.x;
         player.y = data.y;
         player.angle = data.angle;
+        player.dead = data.dead || false;
 
-        const trackData = getTrackDistance(data.x, data.y, TRACK_PATH);
-        player.trackDistance = trackData.progress;
-        player.trackSegment = trackData.segment;
+        if (!player.dead) {
+          const trackData = getTrackDistance(data.x, data.y, TRACK_PATH);
+          player.trackDistance = trackData.progress;
+          player.trackSegment = trackData.segment;
 
-        const nextCp = CHECKPOINTS[player.currentCheckpoint];
-        if (nextCp) {
-          const dist = Math.hypot(data.x - nextCp.x, data.y - nextCp.y);
-          if (dist < 150) {
-            player.currentCheckpoint++;
-            console.log(sessionId, "passed checkpoint", player.currentCheckpoint);
+          const nextCp = CHECKPOINTS[player.currentCheckpoint];
+          if (nextCp) {
+            const dist = Math.hypot(data.x - nextCp.x, data.y - nextCp.y);
+            if (dist < 150) {
+              player.currentCheckpoint++;
+              console.log(sessionId, "passed checkpoint", player.currentCheckpoint);
+            }
           }
         }
 
         let leaderId = null;
         let maxDistance = -1;
         Object.entries(rooms).forEach(([id, p]) => {
-          const d = p.trackDistance || 0;
-          if (d > maxDistance) {
-            maxDistance = d;
-            leaderId = id;
+          if (!p.dead) {
+            const d = p.trackDistance || 0;
+            if (d > maxDistance) {
+              maxDistance = d;
+              leaderId = id;
+            }
           }
         });
 
