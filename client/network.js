@@ -24,6 +24,9 @@ function connectToServer(playerName) {
 
     if (data.type === "players") {
       window.furthestX = data.furthestX || 0;
+      window.leaderX = data.leaderX || 0;
+      window.leaderY = data.leaderY || 3600;
+      window.leaderDirection = data.leaderDirection || 'left';
       updateOtherPlayers(data.players);
     }
 

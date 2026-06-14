@@ -24,8 +24,8 @@ class Track {
     ];
 
     this.checkpoints = [
-      { x1: 500, y1: 2600, x2: 700, y2: 2600 },   // cp1 left side going up
-      { x1: 1100, y1: 2300, x2: 1100, y2: 2500 },  // cp2 inside S top
+      { x1: 500, y1: 2600, x2: 700, y2: 2600 }, // cp1 left side going up
+      { x1: 1100, y1: 2300, x2: 1100, y2: 2500 }, // cp2 inside S top
       { x1: 2100, y1: 2000, x2: 2300, y2: 2000 }, // cp4 first U top
       { x1: 2900, y1: 2000, x2: 3100, y2: 2000 }, // cp5 second U top
       { x1: 3300, y1: 2800, x2: 3500, y2: 2800 }, // cp6 right side going down

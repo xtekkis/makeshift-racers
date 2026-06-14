@@ -5,9 +5,7 @@ const config = {
   backgroundColor: '#1a1a2e',
   physics: {
     default: 'arcade',
-    arcade: {
-      debug: false
-    }
+    arcade: { debug: false }
   },
   scene: {
     preload: preload,
@@ -26,6 +24,9 @@ let outOfBoundsTimer = 0;
 const OUT_OF_BOUNDS_LIMIT = 2000;
 const margin = 20;
 
+let camOffsetX = 0;
+let camOffsetY = 0;
+
 const RESPAWN_POSITIONS = [
   { x: 1900, y: 3600, angle: 180 },
   { x: 1970, y: 3600, angle: 180 },
@@ -33,7 +34,7 @@ const RESPAWN_POSITIONS = [
   { x: 1970, y: 3670, angle: 180 }
 ];
 
-function preload() { }
+function preload() {}
 
 function create() {
   this.track = new Track(this);
@@ -68,6 +69,16 @@ function create() {
   connectToServer("Player1");
 }
 
+function getTargetOffset(direction) {
+  switch (direction) {
+    case 'left':  return { x:  180, y: 0 };
+    case 'right': return { x: -180, y: 0 };
+    case 'up':    return { x: 0, y:  80 };
+    case 'down':  return { x: 0, y: -80 };
+    default:      return { x:  180, y: 0 };
+  }
+}
+
 function update() {
   const speed = 180;
   const turnSpeed = 3;
@@ -95,9 +106,17 @@ function update() {
     console.log("Player died!");
   }
 
-  const leadX = window.furthestX || this.playerBody.x;
-  const scrollX = Math.max(0, Math.min(this.playerBody.x - 640, 6000 - 1280));
-  const scrollY = Math.max(0, Math.min(this.playerBody.y - 360, 4000 - 720));
+  const leaderX = window.leaderX || this.playerBody.x;
+  const leaderY = window.leaderY || this.playerBody.y;
+  const direction = window.leaderDirection || 'left';
+
+  const target = getTargetOffset(direction);
+  camOffsetX += (target.x - camOffsetX) * 0.05;
+  camOffsetY += (target.y - camOffsetY) * 0.05;
+
+  const scrollX = Math.max(0, Math.min(leaderX - 640 + camOffsetX, 6000 - 1280));
+  const scrollY = Math.max(0, Math.min(leaderY - 360 + camOffsetY, 5000 - 720));
+  this.cameras.main.setScroll(scrollX, scrollY);
 
   const isOutOfView =
     this.playerBody.x < scrollX - margin ||
@@ -142,8 +161,6 @@ function update() {
 
   player.x = this.playerBody.x;
   player.y = this.playerBody.y;
-
-  this.cameras.main.setScroll(scrollX, scrollY);
 
   if (window.lastPlayers) {
     this.indicators.update(window.lastPlayers, mySessionId);
