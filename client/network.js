@@ -33,6 +33,12 @@ function connectToServer(playerName) {
     if (data.type === "full") {
       console.log("Room is full!");
     }
+
+    if (data.type === "powerupCollected") {
+      if (window.gameScene && window.gameScene.powerUps) {
+        window.gameScene.powerUps.removeById(data.id);
+      }
+    }
   };
 
   socket.onerror = (error) => {
@@ -54,5 +60,11 @@ function updateOtherPlayers(players) {
   window.lastPlayers = players;
   if (window.updatePlayers) {
     window.updatePlayers(players, mySessionId);
+  }
+}
+
+function sendPowerupCollected(id) {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({ type: "collectPowerup", id: id }));
   }
 }

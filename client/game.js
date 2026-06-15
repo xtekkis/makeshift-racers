@@ -34,11 +34,12 @@ const RESPAWN_POSITIONS = [
   { x: 1970, y: 3670, angle: 180 }
 ];
 
-function preload() { }
+function preload() {}
 
 function create() {
   this.track = new Track(this);
   this.indicators = new Indicators(this);
+  this.powerUps = new PowerUps(this);
 
   player = this.add.circle(1900, 3600, 12, 0xe8c14a);
   player.setDepth(1);
@@ -71,11 +72,11 @@ function create() {
 
 function getTargetOffset(direction) {
   switch (direction) {
-    case 'left': return { x: 180, y: 0 };
+    case 'left':  return { x:  180, y: 0 };
     case 'right': return { x: -180, y: 0 };
-    case 'up': return { x: 0, y: 80 };
-    case 'down': return { x: 0, y: -80 };
-    default: return { x: 180, y: 0 };
+    case 'up':    return { x: 0, y:  80 };
+    case 'down':  return { x: 0, y: -80 };
+    default:      return { x:  180, y: 0 };
   }
 }
 
@@ -167,6 +168,8 @@ function update() {
 
   player.x = this.playerBody.x;
   player.y = this.playerBody.y;
+
+  this.powerUps.checkCollection(this.playerBody.x, this.playerBody.y);
 
   if (window.lastPlayers) {
     this.indicators.update(window.lastPlayers, mySessionId);

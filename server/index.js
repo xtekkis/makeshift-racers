@@ -13,12 +13,12 @@ const CHECKPOINTS = [
 
 const TRACK_PATH = [
   { x: 2000, y: 3600 },
-  { x: 600,  y: 3600 },
-  { x: 600,  y: 1600 },
+  { x: 600, y: 3600 },
+  { x: 600, y: 1600 },
   { x: 1600, y: 1600 },
   { x: 1600, y: 2400 },
-  { x: 900,  y: 2400 },
-  { x: 900,  y: 3000 },
+  { x: 900, y: 2400 },
+  { x: 900, y: 3000 },
   { x: 2200, y: 3000 },
   { x: 2200, y: 1600 },
   { x: 2600, y: 1600 },
@@ -39,6 +39,11 @@ const startPositions = [
 
 let playerCount = 0;
 let cameraX = 0;
+
+const powerupState = {};
+for (let i = 0; i < 15; i++) {
+  powerupState[i] = { collected: false };
+}
 
 function getTrackDistance(x, y, path) {
   let totalLength = 0;
@@ -175,6 +180,14 @@ wss.on("connection", (ws) => {
           leaderY: leader ? leader.y : 3600,
           leaderDirection: leaderDirection
         });
+      }
+    }
+
+    if (data.type === "collectPowerup") {
+      if (!powerupState[data.id].collected) {
+        powerupState[data.id].collected = true;
+        broadcast({ type: "powerupCollected", id: data.id });
+        console.log(sessionId, "collected powerup", data.id);
       }
     }
   });
