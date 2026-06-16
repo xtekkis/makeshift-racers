@@ -34,6 +34,10 @@ function connectToServer(playerName) {
       console.log("Room is full!");
     }
 
+    if (data.type === "bumped") {
+      window.incomingBump = { vx: data.vx, vy: data.vy };
+    }
+
     if (data.type === "powerupCollected") {
       if (window.gameScene && window.gameScene.powerUps) {
         window.gameScene.powerUps.removeById(data.id);
@@ -66,5 +70,11 @@ function updateOtherPlayers(players) {
 function sendPowerupCollected(id) {
   if (socket && socket.readyState === WebSocket.OPEN) {
     socket.send(JSON.stringify({ type: "collectPowerup", id: id }));
+  }
+}
+
+function sendBump(targetSessionId, vx, vy) {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({ type: "bump", target: targetSessionId, vx, vy }));
   }
 }

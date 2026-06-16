@@ -190,6 +190,14 @@ wss.on("connection", (ws) => {
         console.log(sessionId, "collected powerup", data.id);
       }
     }
+
+    if (data.type === "bump") {
+      wss.clients.forEach((client) => {
+        if (client.sessionId === data.target && client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({ type: "bumped", vx: data.vx, vy: data.vy }));
+        }
+      });
+    }
   });
 
   ws.on("close", () => {
