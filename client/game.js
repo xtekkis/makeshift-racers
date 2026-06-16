@@ -31,31 +31,28 @@ let bumpTimer = 0;
 let bumpVx = 0;
 let bumpVy = 0;
 
+let spawnProtection = false;
+let spawnProtectionTimer = 0;
+const SPAWN_PROTECTION_DURATION = 5000;
+
 const MAX_SPEED = 200;
 const MAX_REVERSE = 90;
 const ACCEL = 3;
 const DECEL_RELEASE = 2;
 const DECEL_BRAKE = 12;
 
-const RESPAWN_POSITIONS = [
-  { x: 1900, y: 3600, angle: 180 },
-  { x: 1970, y: 3600, angle: 180 },
-  { x: 1900, y: 3670, angle: 180 },
-  { x: 1970, y: 3670, angle: 180 }
-];
-
-function preload() { }
+function preload() {}
 
 function create() {
   this.track = new Track(this);
   this.indicators = new Indicators(this);
   this.powerUps = new PowerUps(this);
 
-  player = this.add.circle(1900, 3600, 12, 0xe8c14a);
+  player = this.add.circle(1900, 3566, 12, 0xe8c14a);
   player.setDepth(1);
 
   this.playerBody = this.physics.add.existing(
-    this.add.rectangle(1900, 3600, 24, 24, 0x000000, 0)
+    this.add.rectangle(1900, 3566, 24, 24, 0x000000, 0)
   );
   this.playerBody.body.setMaxVelocity(200, 200);
   this.playerBody.body.setCollideWorldBounds(true);
@@ -82,17 +79,18 @@ function create() {
 
 function getTargetOffset(direction) {
   switch (direction) {
-    case 'left': return { x: 180, y: 0 };
+    case 'left':  return { x:  180, y: 0 };
     case 'right': return { x: -180, y: 0 };
-    case 'up': return { x: 0, y: 80 };
-    case 'down': return { x: 0, y: -80 };
-    default: return { x: 180, y: 0 };
+    case 'up':    return { x: 0, y:  80 };
+    case 'down':  return { x: 0, y: -80 };
+    default:      return { x:  180, y: 0 };
   }
 }
 
 function checkCollisions(scene) {
   if (!window.lastPlayers) return;
   if (bumpTimer > 0) return;
+  if (spawnProtection) return;
 
   Object.entries(window.lastPlayers).forEach(([id, p]) => {
     if (p.dead) return;
@@ -110,15 +108,56 @@ function checkCollisions(scene) {
   });
 }
 
-function update() {
-  const turnSpeed = 3;
+function isOverlappingAnyPlayer(scene) {
+  if (!window.lastPlayers) return false;
+  return Object.entries(window.lastPlayers).some(([id, p]) => {
+    if (id === mySessionId) return false;
+    if (p.dead) return false;
+    const dist = Math.hypot(scene.playerBody.x - p.x, scene.playerBody.y - p.y);
+    return dist < 25;
+  });
+}
 
-  if (window.incomingBump) {
+function update() {
+  const turnSpeed = 1;
+
+  if (window.incomingRespawn) {
+    const r = window.incomingRespawn;
+    isDead = false;
+    deathTimer = 0;
+    this.playerBody.x = r.x;
+    this.playerBody.y = r.y;
+    player.x = r.x;
+    player.y = r.y;
+    this.playerAngle = r.angle;
+    this.playerSpeed = 0;
+    player.setAlpha(0.4);
+    spawnProtection = true;
+    spawnProtectionTimer = SPAWN_PROTECTION_DURATION;
+    window.incomingRespawn = null;
+  }
+
+  if (window.incomingBump && !spawnProtection) {
     bumpVx = window.incomingBump.vx;
     bumpVy = window.incomingBump.vy;
     bumpTimer = 500;
     this.playerSpeed = 0;
     window.incomingBump = null;
+  } else if (window.incomingBump) {
+    window.incomingBump = null;
+  }
+
+  // spawn protection timer
+  if (spawnProtection) {
+    spawnProtectionTimer -= 16;
+    if (spawnProtectionTimer <= 0) {
+      if (!isOverlappingAnyPlayer(this)) {
+        spawnProtection = false;
+        player.setAlpha(1);
+      } else {
+        spawnProtectionTimer = 500;
+      }
+    }
   }
 
   if (isDead) {
@@ -142,7 +181,6 @@ function update() {
     return;
   }
 
-  // bump timer
   if (bumpTimer > 0) {
     bumpTimer -= 16;
     this.playerBody.x += bumpVx * 0.016;
@@ -167,12 +205,14 @@ function update() {
     return;
   }
 
-  if (this.track.isOffTrack(this.playerBody.x, this.playerBody.y)) {
-    isDead = true;
-    deathTimer = 2000;
-    this.playerSpeed = 0;
-    player.setAlpha(0.3);
-    console.log("Player died!");
+  if (!spawnProtection) {
+    if (this.track.isOffTrack(this.playerBody.x, this.playerBody.y)) {
+      isDead = true;
+      deathTimer = 2000;
+      this.playerSpeed = 0;
+      player.setAlpha(0.3);
+      console.log("Player died!");
+    }
   }
 
   const leaderX = window.leaderX || this.playerBody.x;
@@ -193,7 +233,7 @@ function update() {
     this.playerBody.y < scrollY - margin ||
     this.playerBody.y > scrollY + 720 + margin;
 
-  if (isOutOfView) {
+  if (isOutOfView && !spawnProtection) {
     outOfBoundsTimer += 16;
     if (outOfBoundsTimer >= OUT_OF_BOUNDS_LIMIT) {
       isDead = true;

@@ -38,6 +38,10 @@ function connectToServer(playerName) {
       window.incomingBump = { vx: data.vx, vy: data.vy };
     }
 
+    if (data.type === "respawn") {
+      window.incomingRespawn = { x: data.x, y: data.y, angle: data.angle };
+    }
+
     if (data.type === "powerupCollected") {
       if (window.gameScene && window.gameScene.powerUps) {
         window.gameScene.powerUps.removeById(data.id);
