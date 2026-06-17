@@ -336,7 +336,9 @@ function updatePlayers(players, myId) {
     }
 
     if (!scene.otherPlayers[id]) {
-      scene.otherPlayers[id] = scene.add.circle(p.x, p.y, 12, 0x4a8fe8);
+      const PLAYER_COLORS = [0xe8c14a, 0x4a8fe8, 0x4ae87a, 0xe84a4a];
+      const color = PLAYER_COLORS[p.playerNumber] || 0x4a8fe8;
+      scene.otherPlayers[id] = scene.add.circle(p.x, p.y, 12, color);
       scene.otherPlayers[id].setDepth(1);
       if (!scene.otherPlayerLabels) scene.otherPlayerLabels = {};
       if (!scene.otherPlayerLabels[id]) {

@@ -19,7 +19,10 @@ function connectToServer(playerName) {
 
     if (data.type === "playerNumber") {
       window.myPlayerNumber = data.number;
-      console.log("My player number:", data.number);
+      const PLAYER_COLORS = [0xe8c14a, 0x4a8fe8, 0x4ae87a, 0xe84a4a];
+      if (window.gameScene) {
+        player.setFillStyle(PLAYER_COLORS[data.number]);
+      }
     }
 
     if (data.type === "players") {
