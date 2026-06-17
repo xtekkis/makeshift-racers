@@ -41,7 +41,7 @@ const ACCEL = 3;
 const DECEL_RELEASE = 2;
 const DECEL_BRAKE = 12;
 
-function preload() {}
+function preload() { }
 
 function create() {
   this.track = new Track(this);
@@ -49,6 +49,9 @@ function create() {
   this.powerUps = new PowerUps(this);
 
   player = this.add.circle(1900, 3566, 12, 0xe8c14a);
+  this.playerLabel = this.add.text(1900, 3566 - 20, 'Player1', {
+    fontSize: '16px', fill: '#ffffff'
+  }).setDepth(10).setOrigin(0.5);
   player.setDepth(1);
 
   this.playerBody = this.physics.add.existing(
@@ -79,11 +82,11 @@ function create() {
 
 function getTargetOffset(direction) {
   switch (direction) {
-    case 'left':  return { x:  180, y: 0 };
+    case 'left': return { x: 180, y: 0 };
     case 'right': return { x: -180, y: 0 };
-    case 'up':    return { x: 0, y:  80 };
-    case 'down':  return { x: 0, y: -80 };
-    default:      return { x:  180, y: 0 };
+    case 'up': return { x: 0, y: 80 };
+    case 'down': return { x: 0, y: -80 };
+    default: return { x: 180, y: 0 };
   }
 }
 
@@ -178,6 +181,8 @@ function update() {
     }
 
     sendMove(this.playerBody.x, this.playerBody.y, this.playerAngle, true);
+    this.playerLabel.x = this.playerBody.x;
+    this.playerLabel.y = this.playerBody.y - 20;
     return;
   }
 
@@ -190,6 +195,9 @@ function update() {
 
     player.x = this.playerBody.x;
     player.y = this.playerBody.y;
+
+    this.playerLabel.x = this.playerBody.x;
+    this.playerLabel.y = this.playerBody.y - 20;
 
     const leaderX = window.leaderX || this.playerBody.x;
     const leaderY = window.leaderY || this.playerBody.y;
@@ -287,6 +295,9 @@ function update() {
   player.x = this.playerBody.x;
   player.y = this.playerBody.y;
 
+  this.playerLabel.x = this.playerBody.x;
+  this.playerLabel.y = this.playerBody.y - 20;
+
   checkCollisions(this);
 
   this.powerUps.checkCollection(this.playerBody.x, this.playerBody.y);
@@ -317,6 +328,9 @@ function updatePlayers(players, myId) {
     if (p.dead) {
       if (scene.otherPlayers[id]) {
         scene.otherPlayers[id].setVisible(false);
+        if (scene.otherPlayerLabels && scene.otherPlayerLabels[id]) {
+          scene.otherPlayerLabels[id].setVisible(false);
+        }
       }
       return;
     }
@@ -324,10 +338,21 @@ function updatePlayers(players, myId) {
     if (!scene.otherPlayers[id]) {
       scene.otherPlayers[id] = scene.add.circle(p.x, p.y, 12, 0x4a8fe8);
       scene.otherPlayers[id].setDepth(1);
+      if (!scene.otherPlayerLabels) scene.otherPlayerLabels = {};
+      if (!scene.otherPlayerLabels[id]) {
+        scene.otherPlayerLabels[id] = scene.add.text(p.x, p.y - 20, p.name, {
+          fontSize: '16px', fill: '#ffffff'
+        }).setDepth(10).setOrigin(0.5);
+      }
     } else {
       scene.otherPlayers[id].setVisible(true);
       scene.otherPlayers[id].x = p.x;
       scene.otherPlayers[id].y = p.y;
+      if (scene.otherPlayerLabels && scene.otherPlayerLabels[id]) {
+        scene.otherPlayerLabels[id].setVisible(true);
+        scene.otherPlayerLabels[id].x = p.x;
+        scene.otherPlayerLabels[id].y = p.y - 20;
+      }
     }
   });
 
@@ -337,6 +362,14 @@ function updatePlayers(players, myId) {
       delete scene.otherPlayers[id];
     }
   });
+  if (scene.otherPlayerLabels) {
+    Object.keys(scene.otherPlayerLabels).forEach((id) => {
+      if (!players[id]) {
+        scene.otherPlayerLabels[id].destroy();
+        delete scene.otherPlayerLabels[id];
+      }
+    });
+  }
 }
 
 window.updatePlayers = updatePlayers;
