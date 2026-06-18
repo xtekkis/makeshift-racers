@@ -49,7 +49,11 @@ function create() {
   this.powerUps = new PowerUps(this);
 
   player = this.add.circle(1900, 3566, 12, 0xe8c14a);
-  this.playerLabel = this.add.text(1900, 3566 - 20, 'Player1', {
+  const PLAYER_COLORS = [0xe8c14a, 0x4a8fe8, 0x4ae87a, 0xe84a4a, 0x9b4ae8, 0xe8874a, 0xe84a9b, 0x4ae8e8];
+  if (window.playerColorIndex !== null && window.playerColorIndex !== undefined) {
+    player.setFillStyle(PLAYER_COLORS[window.playerColorIndex]);
+  }
+  this.playerLabel = this.add.text(1900, 3566 - 20, window.playerName || 'Player', {
     fontSize: '16px', fill: '#ffffff'
   }).setDepth(10).setOrigin(0.5);
   player.setDepth(1);
@@ -77,7 +81,11 @@ function create() {
 
   window.gameScene = this;
   this.otherPlayers = {};
-  connectToServer("Player1");
+  window.leaderX = 1900;
+  window.leaderY = 3566;
+  window.leaderDirection = 'left';
+  window.playerPositioned = false;
+  connectToServer(window.playerName || "Player");
 }
 
 function getTargetOffset(direction) {
@@ -180,7 +188,7 @@ function update() {
       this.indicators.update(window.lastPlayers, mySessionId);
     }
 
-    sendMove(this.playerBody.x, this.playerBody.y, this.playerAngle, true);
+    if (window.playerPositioned) sendMove(this.playerBody.x, this.playerBody.y, this.playerAngle, true);
     this.playerLabel.x = this.playerBody.x;
     this.playerLabel.y = this.playerBody.y - 20;
     return;
@@ -209,7 +217,7 @@ function update() {
     const scrollY = Math.max(0, Math.min(leaderY - 360 + camOffsetY, 5000 - 720));
     this.cameras.main.setScroll(scrollX, scrollY);
 
-    sendMove(this.playerBody.x, this.playerBody.y, this.playerAngle, false);
+    if (window.playerPositioned) sendMove(this.playerBody.x, this.playerBody.y, this.playerAngle, false);
     return;
   }
 
@@ -306,20 +314,13 @@ function update() {
     this.indicators.update(window.lastPlayers, mySessionId);
   }
 
-  sendMove(this.playerBody.x, this.playerBody.y, this.playerAngle, false);
+  if (window.playerPositioned) sendMove(this.playerBody.x, this.playerBody.y, this.playerAngle, false);
 }
 
 function updatePlayers(players, myId) {
   const scene = window.gameScene;
-  if (!scene) return;
 
-  if (myId && players[myId] && !scene.positionSet) {
-    scene.playerBody.x = players[myId].x;
-    scene.playerBody.y = players[myId].y;
-    player.x = players[myId].x;
-    player.y = players[myId].y;
-    scene.positionSet = true;
-  }
+  if (!scene) return;
 
   Object.keys(players).forEach((id) => {
     if (id === myId) return;
@@ -336,8 +337,8 @@ function updatePlayers(players, myId) {
     }
 
     if (!scene.otherPlayers[id]) {
-      const PLAYER_COLORS = [0xe8c14a, 0x4a8fe8, 0x4ae87a, 0xe84a4a];
-      const color = PLAYER_COLORS[p.playerNumber] || 0x4a8fe8;
+      const PLAYER_COLORS = [0xe8c14a, 0x4a8fe8, 0x4ae87a, 0xe84a4a, 0x9b4ae8, 0xe8874a, 0xe84a9b, 0x4ae8e8];
+      const color = PLAYER_COLORS[p.colorIndex !== undefined ? p.colorIndex : p.playerNumber] || 0x4a8fe8;
       scene.otherPlayers[id] = scene.add.circle(p.x, p.y, 12, color);
       scene.otherPlayers[id].setDepth(1);
       if (!scene.otherPlayerLabels) scene.otherPlayerLabels = {};

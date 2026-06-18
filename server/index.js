@@ -86,17 +86,21 @@ let playerCount = 0;
 let cameraX = 0;
 
 const powerupState = {};
+const lobbySlots = [null, null, null, null];
+let lobbyPlayerMap = {};
+
 for (let i = 0; i < 15; i++) {
   powerupState[i] = { collected: false };
 }
 
-function getTrackDistance(x, y, path) {
+function getTrackDistance(x, y, path, hintSegment) {
   let totalLength = 0;
   let bestDist = Infinity;
   let bestProgress = 0;
   let bestSegment = 0;
+  const numSegments = path.length - 1;
 
-  for (let i = 0; i < path.length - 1; i++) {
+  for (let i = 0; i < numSegments; i++) {
     const a = path[i];
     const b = path[i + 1];
     const segLen = Math.hypot(b.x - a.x, b.y - a.y);
@@ -109,8 +113,24 @@ function getTrackDistance(x, y, path) {
     const closestY = a.y + t * dy;
     const dist = Math.hypot(x - closestX, y - closestY);
 
-    if (dist < bestDist) {
-      bestDist = dist;
+    // Penalise segments far from the player's known race position so the
+    // loop's last straight (which passes near the start grid) can't steal
+    // the match from the correct early-race segments.
+    let effectiveDist = dist;
+    if (hintSegment !== undefined) {
+      let segDiff = i - hintSegment;
+      // Only allow a forward lap-wrap (e.g. seg 14→0) when the hint is
+      // itself near the very end of the track. Never wrap backward.
+      if (hintSegment >= numSegments - 3 && i <= 2) {
+        segDiff = i + (numSegments - hintSegment);
+      }
+      if (segDiff < -1 || segDiff > 5) {
+        effectiveDist += Math.abs(segDiff) * 1000;
+      }
+    }
+
+    if (effectiveDist < bestDist) {
+      bestDist = effectiveDist;
       bestProgress = totalLength + t * segLen;
       bestSegment = i;
     }
@@ -135,11 +155,39 @@ function getSegmentDirection(segment, path) {
 wss.on("connection", (ws) => {
   const sessionId = Math.random().toString(36).substring(2, 9);
   ws.sessionId = sessionId;
+  ws.gameStarted = false;
   ws.send(JSON.stringify({ type: "init", sessionId: sessionId }));
   console.log(sessionId, "connected");
 
   ws.on("message", (message) => {
     const data = JSON.parse(message);
+
+    if (data.type === "lobbyJoin") {
+      const slotIndex = lobbySlots.findIndex(s => s === null);
+      if (slotIndex === -1) {
+        ws.send(JSON.stringify({ type: "lobbyFull" }));
+        ws.close();
+        return;
+      }
+      lobbySlots[slotIndex] = { name: "Player", color: null, ready: false };
+      lobbyPlayerMap[sessionId] = slotIndex;
+      broadcastLobby();
+    }
+
+    if (data.type === "lobbyUpdate") {
+      const slotIndex = lobbyPlayerMap[sessionId];
+      if (slotIndex !== undefined && lobbySlots[slotIndex]) {
+        lobbySlots[slotIndex].name = data.name || "Player";
+        lobbySlots[slotIndex].color = data.color;
+        lobbySlots[slotIndex].ready = data.ready;
+        broadcastLobby();
+
+        const connected = lobbySlots.filter(s => s);
+        if (connected.length >= 2 && connected.every(s => s.ready)) {
+          startGame();
+        }
+      }
+    }
 
     if (data.type === "join") {
       if (Object.keys(rooms).length >= 4) {
@@ -147,35 +195,50 @@ wss.on("connection", (ws) => {
         ws.close();
         return;
       }
-      const pos = startPositions[playerCount % 4];
-      const playerNumber = playerCount % 4;
+      const slotIndex = lobbyPlayerMap[sessionId];
+      const lobbyData = lobbySlots[slotIndex];
+      const playerNumber = slotIndex !== undefined ? slotIndex : playerCount % 4;
+      const pos = startPositions[playerNumber];
       playerCount++;
       const gridBonus = (3 - playerNumber) * 0.5;
 
+      const startTrackData = getTrackDistance(pos.x, pos.y, TRACK_PATH, 0);
       rooms[sessionId] = {
         x: pos.x,
         y: pos.y,
         angle: 0,
-        name: data.name || "Player",
+        name: lobbyData ? lobbyData.name : (data.name || "Player"),
+        colorIndex: lobbyData ? lobbyData.color : playerNumber,
         playerNumber: playerNumber,
         currentCheckpoint: 0,
-        trackDistance: 0,
+        trackDistance: startTrackData.progress,
         gridBonus: gridBonus,
-        trackSegment: 0,
-        hasMoved: false,
+        trackSegment: startTrackData.segment,
+        hasMoved: true,
         dead: false
       };
-      console.log(sessionId, "joined as", data.name);
+      console.log(sessionId, "joined as", rooms[sessionId].name);
       ws.send(JSON.stringify({ type: "playerNumber", number: playerNumber }));
 
-      const firstAlive = Object.values(rooms).find(p => !p.dead);
+      let currentLeaderId = null;
+      let maxD = -Infinity;
+      Object.entries(rooms).forEach(([id, p]) => {
+        const d = (p.trackDistance || 0) + (p.gridBonus || 0);
+        if (d > maxD) {
+          maxD = d;
+          currentLeaderId = id;
+        }
+      });
+
+      const currentLeader = rooms[currentLeaderId];
       broadcast({
         type: "players",
         players: rooms,
         furthestX: cameraX,
-        leaderX: firstAlive ? firstAlive.x : pos.x,
-        leaderY: firstAlive ? firstAlive.y : pos.y,
-        leaderDirection: 'left'
+        leaderHasMoved: true,
+        leaderX: currentLeader ? currentLeader.x : pos.x,
+        leaderY: currentLeader ? currentLeader.y : pos.y,
+        leaderDirection: getSegmentDirection(currentLeader ? currentLeader.trackSegment : 0, TRACK_PATH)
       });
     }
 
@@ -188,20 +251,9 @@ wss.on("connection", (ws) => {
         player.dead = data.dead || false;
 
         if (!player.dead) {
-          const newTrackData = getTrackDistance(data.x, data.y, TRACK_PATH);
-
-          if (!player.hasMoved) {
-            const startPos = startPositions[player.playerNumber];
-            const distMoved = Math.hypot(data.x - startPos.x, data.y - startPos.y);
-            if (distMoved > 200) {
-              player.hasMoved = true;
-            }
-          }
-
-          if (player.hasMoved) {
-            player.trackDistance = newTrackData.progress;
-            player.trackSegment = newTrackData.segment;
-          }
+          const newTrackData = getTrackDistance(data.x, data.y, TRACK_PATH, player.trackSegment);
+          player.trackDistance = newTrackData.progress;
+          player.trackSegment = newTrackData.segment;
 
           const nextCp = CHECKPOINTS[player.currentCheckpoint];
           if (nextCp) {
@@ -251,11 +303,6 @@ wss.on("connection", (ws) => {
           leaderId = Object.keys(rooms).find(id => !rooms[id].dead);
         }
 
-        const anyoneMoved = Object.values(rooms).some(p => p.hasMoved);
-        if (!anyoneMoved) {
-          leaderId = Object.keys(rooms).find(id => rooms[id].playerNumber === 0);
-        }
-
         const leader = rooms[leaderId];
         let furthestX = 0;
         Object.values(rooms).forEach((p) => { if (p.x > furthestX) furthestX = p.x; });
@@ -269,8 +316,9 @@ wss.on("connection", (ws) => {
           type: "players",
           players: rooms,
           furthestX: cameraX,
+          leaderHasMoved: true,
           leaderX: leader ? leader.x : 1900,
-          leaderY: leader ? leader.y : 3600,
+          leaderY: leader ? leader.y : 3566,
           leaderDirection: leaderDirection
         });
       }
@@ -283,7 +331,7 @@ wss.on("connection", (ws) => {
         console.log(sessionId, "collected powerup", data.id);
       }
     }
-
+    
     if (data.type === "bump") {
       wss.clients.forEach((client) => {
         if (client.sessionId === data.target && client.readyState === WebSocket.OPEN) {
@@ -295,6 +343,12 @@ wss.on("connection", (ws) => {
 
   ws.on("close", () => {
     console.log(sessionId, "disconnected");
+    const slotIndex = lobbyPlayerMap[sessionId];
+    if (slotIndex !== undefined) {
+      lobbySlots[slotIndex] = null;
+      delete lobbyPlayerMap[sessionId];
+      broadcastLobby();
+    }
     delete rooms[sessionId];
     if (Object.keys(rooms).length === 0) {
       cameraX = 0;
@@ -307,6 +361,23 @@ wss.on("connection", (ws) => {
     broadcast({ type: "players", players: rooms, furthestX: cameraX, leaderX: 1900, leaderY: 3600, leaderDirection: 'left' });
   });
 });
+
+function broadcastLobby() {
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify({ type: "lobbyState", slots: lobbySlots }));
+    }
+  });
+}
+
+function startGame() {
+  playerCount = 0;
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify({ type: "gameStart" }));
+    }
+  });
+}
 
 function broadcast(data) {
   wss.clients.forEach((client) => {

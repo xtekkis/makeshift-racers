@@ -1,20 +1,383 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Makeshift Racers</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #1a1a2e; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #1a1a2e;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+      color: white;
+    }
+
+    #lobby {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 30px;
+      width: 100%;
+      max-width: 900px;
+      padding: 40px;
+    }
+
+    #lobby h1 {
+      font-size: 36px;
+      letter-spacing: 2px;
+    }
+
+    .color-picker {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .color-row {
+      display: flex;
+      gap: 16px;
+    }
+
+    .color-swatch {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+
+    .color-swatch:hover:not(.taken) {
+      transform: scale(1.15);
+    }
+
+    .color-swatch.selected {
+      border-color: white;
+      transform: scale(1.15);
+    }
+
+    .color-swatch.taken {
+      opacity: 0.25;
+      cursor: not-allowed;
+    }
+
+    .my-setup {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .car-preview {
+      width: 80px;
+      height: 80px;
+      border: 2px solid #444;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .car-preview-circle {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #333;
+    }
+
+    #nameInput {
+      background: #2a2a4a;
+      border: 1px solid #555;
+      color: white;
+      padding: 8px 16px;
+      font-size: 16px;
+      border-radius: 6px;
+      text-align: center;
+      width: 200px;
+    }
+
+    #nameInput:focus {
+      outline: none;
+      border-color: #888;
+    }
+
+    #readyBtn {
+      background: #4a8fe8;
+      color: white;
+      border: none;
+      padding: 10px 40px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    #readyBtn:hover {
+      background: #3a7fd8;
+    }
+
+    #readyBtn.ready {
+      background: #4ae87a;
+      color: #1a1a2e;
+    }
+
+    .players-grid {
+      display: flex;
+      gap: 24px;
+    }
+
+    .player-slot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      width: 160px;
+    }
+
+    .player-car-box {
+      width: 160px;
+      height: 100px;
+      border: 2px solid #444;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0d0d1a;
+    }
+
+    .player-car-circle {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #333;
+    }
+
+    .player-name {
+      font-size: 14px;
+      color: #aaa;
+    }
+
+    .ready-status {
+      font-size: 18px;
+    }
+
+    .ready-status.ready {
+      color: #4ae87a;
+    }
+
+    .ready-status.not-ready {
+      color: #e84a4a;
+    }
+
+    #game {
+      display: none;
+    }
   </style>
 </head>
+
 <body>
-  <script src="node_modules/phaser/dist/phaser.min.js"></script>
-  <script src="track.js"></script>
-  <script src="indicators.js"></script>
-  <script src="powerups.js"></script>
-  <script src="network.js"></script>
-  <script src="game.js"></script>
+  <div id="lobby">
+    <h1>Makeshift Racers</h1>
+
+    <div class="color-picker">
+      <div class="color-row">
+        <div class="color-swatch" style="background:#e8c14a" data-color="0" id="swatch0"></div>
+        <div class="color-swatch" style="background:#4a8fe8" data-color="1" id="swatch1"></div>
+        <div class="color-swatch" style="background:#4ae87a" data-color="2" id="swatch2"></div>
+        <div class="color-swatch" style="background:#e84a4a" data-color="3" id="swatch3"></div>
+      </div>
+      <div class="color-row">
+        <div class="color-swatch" style="background:#9b4ae8" data-color="4" id="swatch4"></div>
+        <div class="color-swatch" style="background:#e8874a" data-color="5" id="swatch5"></div>
+        <div class="color-swatch" style="background:#e84a9b" data-color="6" id="swatch6"></div>
+        <div class="color-swatch" style="background:#4ae8e8" data-color="7" id="swatch7"></div>
+      </div>
+    </div>
+
+    <div class="my-setup">
+      <div class="car-preview">
+        <div class="car-preview-circle" id="myPreview"></div>
+      </div>
+      <input type="text" id="nameInput" placeholder="Enter name" maxlength="12" />
+      <button id="readyBtn">Ready</button>
+    </div>
+
+    <div class="players-grid">
+      <div class="player-slot" id="slot0">
+        <div class="player-car-box">
+          <div class="player-car-circle" id="car0"></div>
+        </div>
+        <div class="player-name" id="pname0">Player 1</div>
+        <div class="ready-status not-ready" id="status0">✗ ready</div>
+      </div>
+      <div class="player-slot" id="slot1">
+        <div class="player-car-box">
+          <div class="player-car-circle" id="car1"></div>
+        </div>
+        <div class="player-name" id="pname1">Player 2</div>
+        <div class="ready-status not-ready" id="status1">✗ ready</div>
+      </div>
+      <div class="player-slot" id="slot2">
+        <div class="player-car-box">
+          <div class="player-car-circle" id="car2"></div>
+        </div>
+        <div class="player-name" id="pname2">Player 3</div>
+        <div class="ready-status not-ready" id="status2">✗ ready</div>
+      </div>
+      <div class="player-slot" id="slot3">
+        <div class="player-car-box">
+          <div class="player-car-circle" id="car3"></div>
+        </div>
+        <div class="player-name" id="pname3">Player 4</div>
+        <div class="ready-status not-ready" id="status3">✗ ready</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="game"></div>
+
+  <script>
+    const COLORS = ['#e8c14a', '#4a8fe8', '#4ae87a', '#e84a4a', '#9b4ae8', '#e8874a', '#e84a9b', '#4ae8e8'];
+    const HEX_COLORS = [0xe8c14a, 0x4a8fe8, 0x4ae87a, 0xe84a4a, 0x9b4ae8, 0xe8874a, 0xe84a9b, 0x4ae8e8];
+    let selectedColor = null;
+    let isReady = false;
+
+    document.querySelectorAll('.color-swatch').forEach(swatch => {
+      swatch.addEventListener('click', () => {
+        if (swatch.classList.contains('taken')) return;
+        document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+        swatch.classList.add('selected');
+        selectedColor = parseInt(swatch.dataset.color);
+        document.getElementById('myPreview').style.background = COLORS[selectedColor];
+        if (window.lobbySocket) {
+          window.lobbySocket.send(JSON.stringify({ type: 'lobbyUpdate', color: selectedColor, name: document.getElementById('nameInput').value || 'Player', ready: isReady }));
+        }
+      });
+    });
+
+    document.getElementById('nameInput').addEventListener('input', () => {
+      if (window.lobbySocket) {
+        window.lobbySocket.send(JSON.stringify({ type: 'lobbyUpdate', color: selectedColor, name: document.getElementById('nameInput').value || 'Player', ready: isReady }));
+      }
+    });
+
+    document.getElementById('readyBtn').addEventListener('click', () => {
+      if (selectedColor === null) {
+        alert('Please pick a color first!');
+        return;
+      }
+      const name = document.getElementById('nameInput').value.trim() || 'Player';
+      isReady = !isReady;
+      const btn = document.getElementById('readyBtn');
+      btn.textContent = isReady ? 'Cancel' : 'Ready';
+      btn.classList.toggle('ready', isReady);
+      if (window.lobbySocket) {
+        window.lobbySocket.send(JSON.stringify({ type: 'lobbyUpdate', color: selectedColor, name, ready: isReady }));
+      }
+    });
+
+    const lobbySocket = new WebSocket('ws://localhost:3000');
+    window.lobbySocket = lobbySocket;
+
+    lobbySocket.onopen = () => {
+      lobbySocket.send(JSON.stringify({ type: 'lobbyJoin' }));
+    };
+
+    lobbySocket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'init') {
+        window.lobbySessionId = data.sessionId;
+      }
+
+      if (data.type === 'gameStart') {
+        startGame();
+      }
+
+      if (data.type === 'lobbyState') {
+        const slots = data.slots;
+        const takenColors = slots.filter(s => s && s.color !== null).map(s => s.color);
+
+        document.querySelectorAll('.color-swatch').forEach(swatch => {
+          const c = parseInt(swatch.dataset.color);
+          const isMine = c === selectedColor;
+          const isTaken = takenColors.includes(c) && !isMine;
+          swatch.classList.toggle('taken', isTaken);
+        });
+
+        // if our color got taken by someone else, deselect
+        if (selectedColor !== null && takenColors.includes(selectedColor) && !isReady) {
+          const mySlot = slots.find(s => s && s.color === selectedColor);
+          if (mySlot && mySlot.name !== (document.getElementById('nameInput').value || 'Player')) {
+            document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+            selectedColor = null;
+            document.getElementById('myPreview').style.background = '#333';
+          }
+        }
+
+        slots.forEach((slot, i) => {
+          const car = document.getElementById('car' + i);
+          const pname = document.getElementById('pname' + i);
+          const status = document.getElementById('status' + i);
+          if (slot) {
+            car.style.background = slot.color !== null ? COLORS[slot.color] : '#333';
+            pname.textContent = slot.name;
+            status.textContent = slot.ready ? '✓ ready' : '✗ ready';
+            status.className = 'ready-status ' + (slot.ready ? 'ready' : 'not-ready');
+          } else {
+            car.style.background = '#333';
+            pname.textContent = 'Player ' + (i + 1);
+            status.textContent = '✗ ready';
+            status.className = 'ready-status not-ready';
+          }
+        });
+
+        const connected = slots.filter(s => s);
+        if (connected.length >= 2 && connected.every(s => s.ready)) {
+          startGame();
+        }
+      }
+
+      if (data.type === 'lobbyFull') {
+        alert('Room is full!');
+        lobbySocket.close();
+      }
+    };
+
+    function startGame() {
+      const name = document.getElementById('nameInput').value.trim() || 'Player';
+      window.playerName = name;
+      window.playerColorIndex = selectedColor;
+      window.playerHexColor = HEX_COLORS[selectedColor];
+      window.gameSocket = lobbySocket;
+      document.getElementById('lobby').style.display = 'none';
+      document.getElementById('game').style.display = 'block';
+
+      const scripts = [
+        'node_modules/phaser/dist/phaser.min.js',
+        'track.js', 'indicators.js', 'powerups.js', 'network.js', 'game.js'
+      ];
+
+      function loadScript(i) {
+        if (i >= scripts.length) return;
+        const s = document.createElement('script');
+        s.src = scripts[i];
+        s.onload = () => loadScript(i + 1);
+        document.body.appendChild(s);
+      }
+      loadScript(0);
+    }
+  </script>
 </body>
+
 </html>
