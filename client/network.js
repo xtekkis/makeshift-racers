@@ -43,6 +43,30 @@ function connectToServer(playerName) {
       updateOtherPlayers(data.players);
     }
 
+    if (data.type === "countdown") {
+      window.movementLocked = true;
+      const overlay = document.getElementById('countdown-overlay');
+      const text = document.getElementById('countdown-text');
+      if (overlay && text) {
+        overlay.style.display = 'flex';
+        text.style.color = 'white';
+        text.textContent = data.count;
+      }
+    }
+
+    if (data.type === "go") {
+      const overlay = document.getElementById('countdown-overlay');
+      const text = document.getElementById('countdown-text');
+      if (text) {
+        text.style.color = '#4ae87a';
+        text.textContent = 'GO!';
+      }
+      setTimeout(() => {
+        if (overlay) overlay.style.display = 'none';
+        window.movementLocked = false;
+      }, 900);
+    }
+
     if (data.type === "full") { console.log("Room is full!"); }
     if (data.type === "bumped") { window.incomingBump = { vx: data.vx, vy: data.vy }; }
     if (data.type === "respawn") { window.incomingRespawn = { x: data.x, y: data.y, angle: data.angle }; }

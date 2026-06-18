@@ -183,6 +183,25 @@
     #game {
       display: none;
     }
+
+    #countdown-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    #countdown-text {
+      font-size: 140px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 0 0 60px rgba(255, 255, 255, 0.5), 0 4px 20px rgba(0, 0, 0, 0.9);
+      user-select: none;
+      transition: color 0.1s;
+    }
   </style>
 </head>
 
@@ -246,6 +265,7 @@
   </div>
 
   <div id="game"></div>
+  <div id="countdown-overlay"><span id="countdown-text"></span></div>
 
   <script>
     const COLORS = ['#e8c14a', '#4a8fe8', '#4ae87a', '#e84a4a', '#9b4ae8', '#e8874a', '#e84a9b', '#4ae8e8'];

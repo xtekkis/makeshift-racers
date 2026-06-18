@@ -85,6 +85,7 @@ function create() {
   window.leaderY = 3566;
   window.leaderDirection = 'left';
   window.playerPositioned = false;
+  window.movementLocked = true;
   connectToServer(window.playerName || "Player");
 }
 
@@ -263,33 +264,35 @@ function update() {
     outOfBoundsTimer = 0;
   }
 
-  if (cursors.left.isDown || this.wasd.left.isDown) {
-    this.playerAngle -= turnSpeed;
-  } else if (cursors.right.isDown || this.wasd.right.isDown) {
-    this.playerAngle += turnSpeed;
-  }
-
-  const goingForward = cursors.up.isDown || this.wasd.up.isDown;
-  const goingBack = cursors.down.isDown || this.wasd.down.isDown;
-
-  if (goingForward) {
-    this.playerSpeed += ACCEL;
-    if (this.playerSpeed > MAX_SPEED) this.playerSpeed = MAX_SPEED;
-  } else if (goingBack) {
-    if (this.playerSpeed > 0) {
-      this.playerSpeed -= DECEL_BRAKE;
-      if (this.playerSpeed < 0) this.playerSpeed = 0;
-    } else {
-      this.playerSpeed -= ACCEL;
-      if (this.playerSpeed < -MAX_REVERSE) this.playerSpeed = -MAX_REVERSE;
+  if (!window.movementLocked) {
+    if (cursors.left.isDown || this.wasd.left.isDown) {
+      this.playerAngle -= turnSpeed;
+    } else if (cursors.right.isDown || this.wasd.right.isDown) {
+      this.playerAngle += turnSpeed;
     }
-  } else {
-    if (this.playerSpeed > 0) {
-      this.playerSpeed -= DECEL_RELEASE;
-      if (this.playerSpeed < 0) this.playerSpeed = 0;
-    } else if (this.playerSpeed < 0) {
-      this.playerSpeed += DECEL_RELEASE;
-      if (this.playerSpeed > 0) this.playerSpeed = 0;
+
+    const goingForward = cursors.up.isDown || this.wasd.up.isDown;
+    const goingBack = cursors.down.isDown || this.wasd.down.isDown;
+
+    if (goingForward) {
+      this.playerSpeed += ACCEL;
+      if (this.playerSpeed > MAX_SPEED) this.playerSpeed = MAX_SPEED;
+    } else if (goingBack) {
+      if (this.playerSpeed > 0) {
+        this.playerSpeed -= DECEL_BRAKE;
+        if (this.playerSpeed < 0) this.playerSpeed = 0;
+      } else {
+        this.playerSpeed -= ACCEL;
+        if (this.playerSpeed < -MAX_REVERSE) this.playerSpeed = -MAX_REVERSE;
+      }
+    } else {
+      if (this.playerSpeed > 0) {
+        this.playerSpeed -= DECEL_RELEASE;
+        if (this.playerSpeed < 0) this.playerSpeed = 0;
+      } else if (this.playerSpeed < 0) {
+        this.playerSpeed += DECEL_RELEASE;
+        if (this.playerSpeed > 0) this.playerSpeed = 0;
+      }
     }
   }
 
@@ -306,15 +309,16 @@ function update() {
   this.playerLabel.x = this.playerBody.x;
   this.playerLabel.y = this.playerBody.y - 20;
 
-  checkCollisions(this);
-
-  this.powerUps.checkCollection(this.playerBody.x, this.playerBody.y);
+  if (!window.movementLocked) {
+    checkCollisions(this);
+    this.powerUps.checkCollection(this.playerBody.x, this.playerBody.y);
+  }
 
   if (window.lastPlayers) {
     this.indicators.update(window.lastPlayers, mySessionId);
   }
 
-  if (window.playerPositioned) sendMove(this.playerBody.x, this.playerBody.y, this.playerAngle, false);
+  if (window.playerPositioned && !window.movementLocked) sendMove(this.playerBody.x, this.playerBody.y, this.playerAngle, false);
 }
 
 function updatePlayers(players, myId) {

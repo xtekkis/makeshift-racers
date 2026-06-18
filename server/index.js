@@ -84,6 +84,8 @@ const startPositions = [
 
 let playerCount = 0;
 let cameraX = 0;
+let expectedPlayers = 0;
+let playersJoined = 0;
 
 const powerupState = {};
 const lobbySlots = [null, null, null, null];
@@ -219,6 +221,11 @@ wss.on("connection", (ws) => {
       };
       console.log(sessionId, "joined as", rooms[sessionId].name);
       ws.send(JSON.stringify({ type: "playerNumber", number: playerNumber }));
+
+      playersJoined++;
+      if (expectedPlayers > 0 && playersJoined === expectedPlayers) {
+        startCountdown();
+      }
 
       let currentLeaderId = null;
       let maxD = -Infinity;
@@ -372,11 +379,27 @@ function broadcastLobby() {
 
 function startGame() {
   playerCount = 0;
+  expectedPlayers = lobbySlots.filter(s => s !== null).length;
+  playersJoined = 0;
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(JSON.stringify({ type: "gameStart" }));
     }
   });
+}
+
+function startCountdown() {
+  let count = 3;
+  broadcast({ type: "countdown", count });
+  const interval = setInterval(() => {
+    count--;
+    if (count > 0) {
+      broadcast({ type: "countdown", count });
+    } else {
+      broadcast({ type: "go" });
+      clearInterval(interval);
+    }
+  }, 1000);
 }
 
 function broadcast(data) {
