@@ -318,7 +318,7 @@ function update() {
     this.indicators.update(window.lastPlayers, mySessionId);
   }
 
-  if (window.playerPositioned && !window.movementLocked) sendMove(this.playerBody.x, this.playerBody.y, this.playerAngle, false);
+  if (window.playerPositioned && !window.movementLocked) sendMove(this.playerBody.x, this.playerBody.y, this.playerAngle, isDead);
 }
 
 function updatePlayers(players, myId) {

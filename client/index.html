@@ -202,6 +202,106 @@
       user-select: none;
       transition: color 0.1s;
     }
+
+    #scoreboard-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.88);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      color: white;
+      gap: 32px;
+    }
+
+    #scoreboard-title {
+      font-size: 32px;
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+
+    #scoreboard-bars {
+      display: flex;
+      gap: 32px;
+      align-items: flex-end;
+    }
+
+    .score-bar-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      width: 100px;
+    }
+
+    .score-total-label {
+      font-size: 13px;
+      color: #aaa;
+      white-space: nowrap;
+    }
+
+    .score-bar-outer {
+      width: 60px;
+      height: 240px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      position: relative;
+      background: rgba(255,255,255,0.06);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .score-bar {
+      width: 100%;
+      position: absolute;
+      bottom: 0;
+      border-radius: 4px 4px 0 0;
+      transition: height 0.5s ease;
+    }
+
+    .score-name-label {
+      font-size: 14px;
+      color: #ddd;
+      text-align: center;
+    }
+
+    #scoreboard-footer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    #ready-next-btn {
+      background: #4ae87a;
+      color: #1a1a2e;
+      border: none;
+      padding: 12px 48px;
+      font-size: 18px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    #ready-next-btn:hover:not(:disabled) {
+      background: #3ad46a;
+    }
+
+    #ready-next-btn:disabled {
+      background: #555;
+      color: #999;
+      cursor: default;
+    }
+
+    #ready-status {
+      font-size: 14px;
+      color: #aaa;
+    }
   </style>
 </head>
 
@@ -266,6 +366,14 @@
 
   <div id="game"></div>
   <div id="countdown-overlay"><span id="countdown-text"></span></div>
+  <div id="scoreboard-overlay">
+    <h2 id="scoreboard-title">Round Results</h2>
+    <div id="scoreboard-bars"></div>
+    <div id="scoreboard-footer">
+      <button id="ready-next-btn">Play Again</button>
+      <div id="ready-status"></div>
+    </div>
+  </div>
 
   <script>
     const COLORS = ['#e8c14a', '#4a8fe8', '#4ae87a', '#e84a4a', '#9b4ae8', '#e8874a', '#e84a9b', '#4ae8e8'];
@@ -281,14 +389,14 @@
         selectedColor = parseInt(swatch.dataset.color);
         document.getElementById('myPreview').style.background = COLORS[selectedColor];
         if (window.lobbySocket) {
-          window.lobbySocket.send(JSON.stringify({ type: 'lobbyUpdate', color: selectedColor, name: document.getElementById('nameInput').value || 'Player', ready: isReady }));
+          window.lobbySocket.send(JSON.stringify({ type: 'lobbyUpdate', color: selectedColor, name: document.getElementById('nameInput').value, ready: isReady }));
         }
       });
     });
 
     document.getElementById('nameInput').addEventListener('input', () => {
       if (window.lobbySocket) {
-        window.lobbySocket.send(JSON.stringify({ type: 'lobbyUpdate', color: selectedColor, name: document.getElementById('nameInput').value || 'Player', ready: isReady }));
+        window.lobbySocket.send(JSON.stringify({ type: 'lobbyUpdate', color: selectedColor, name: document.getElementById('nameInput').value, ready: isReady }));
       }
     });
 
@@ -297,7 +405,7 @@
         alert('Please pick a color first!');
         return;
       }
-      const name = document.getElementById('nameInput').value.trim() || 'Player';
+      const name = document.getElementById('nameInput').value.trim();
       isReady = !isReady;
       const btn = document.getElementById('readyBtn');
       btn.textContent = isReady ? 'Cancel' : 'Ready';
@@ -375,7 +483,7 @@
     };
 
     function startGame() {
-      const name = document.getElementById('nameInput').value.trim() || 'Player';
+      const name = document.getElementById('nameInput').value.trim();
       window.playerName = name;
       window.playerColorIndex = selectedColor;
       window.playerHexColor = HEX_COLORS[selectedColor];
@@ -385,7 +493,7 @@
 
       const scripts = [
         'node_modules/phaser/dist/phaser.min.js',
-        'track.js', 'indicators.js', 'powerups.js', 'network.js', 'game.js'
+        'track.js', 'indicators.js', 'powerups.js', 'scoreboard.js', 'network.js', 'game.js'
       ];
 
       function loadScript(i) {

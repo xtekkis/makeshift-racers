@@ -173,7 +173,7 @@ wss.on("connection", (ws) => {
         ws.close();
         return;
       }
-      lobbySlots[slotIndex] = { name: "Player", color: null, ready: false };
+      lobbySlots[slotIndex] = { name: "Player " + (slotIndex + 1), color: null, ready: false };
       lobbyPlayerMap[sessionId] = slotIndex;
       broadcastLobby();
     }
@@ -181,7 +181,7 @@ wss.on("connection", (ws) => {
     if (data.type === "lobbyUpdate") {
       const slotIndex = lobbyPlayerMap[sessionId];
       if (slotIndex !== undefined && lobbySlots[slotIndex]) {
-        lobbySlots[slotIndex].name = data.name || "Player";
+        lobbySlots[slotIndex].name = data.name || ("Player " + (slotIndex + 1));
         lobbySlots[slotIndex].color = data.color;
         lobbySlots[slotIndex].ready = data.ready;
         broadcastLobby();
@@ -294,9 +294,12 @@ wss.on("connection", (ws) => {
               let spawnIndex = 0;
 
               Object.entries(rooms).forEach(([id, p]) => {
-                if (p.dead && spawnIndex < spawns.length) {
+                if (id !== sessionId && (p.dead || p.currentCheckpoint < cpIndex) && spawnIndex < spawns.length) {
                   const spawn = spawns[spawnIndex];
                   spawnIndex++;
+                  if (cpIndex > p.currentCheckpoint) {
+                    p.currentCheckpoint = cpIndex;
+                  }
                   wss.clients.forEach((client) => {
                     if (client.sessionId === id && client.readyState === WebSocket.OPEN) {
                       client.send(JSON.stringify({
@@ -313,7 +316,7 @@ wss.on("connection", (ws) => {
           }
         }
 
-        if (roundActive) {
+        if (roundActive && Object.keys(rooms).length > 0) {
           const allDead = Object.values(rooms).every(p => p.dead);
           if (allDead) {
             roundActive = false;
@@ -447,7 +450,7 @@ function endRound() {
   if (!roundActive) return;
   roundActive = false;
   Object.values(rooms).forEach(p => { p.totalScore += p.roundScore; });
-  const winnerEntry = Object.entries(rooms).find(([, p]) => p.totalScore >= 50);
+  const winnerEntry = Object.entries(rooms).find(([, p]) => p.totalScore >= 250);
   broadcast({
     type: "roundEnd",
     players: rooms,

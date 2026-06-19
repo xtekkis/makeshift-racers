@@ -46,12 +46,14 @@ function connectToServer(playerName) {
     }
 
     if (data.type === "countdown") {
+      hideScoreboard();
       window.movementLocked = true;
       const overlay = document.getElementById('countdown-overlay');
       const text = document.getElementById('countdown-text');
       if (overlay && text) {
         overlay.style.display = 'flex';
         text.style.color = 'white';
+        text.style.fontSize = '140px';
         text.textContent = data.count;
       }
     }
@@ -78,16 +80,13 @@ function connectToServer(playerName) {
         text.style.fontSize = '60px';
         text.textContent = 'Everyone wiped out!';
         overlay.style.display = 'flex';
-        setTimeout(() => {
-          text.style.fontSize = '140px';
-          overlay.style.display = 'none';
-        }, 2000);
       }
     }
 
     if (data.type === "roundEnd") {
       window.movementLocked = true;
       window.roundEndData = data;
+      showScoreboard(data);
     }
 
     if (data.type === "roundReadyUpdate") {
