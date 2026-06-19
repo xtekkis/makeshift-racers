@@ -86,6 +86,8 @@ let playerCount = 0;
 let cameraX = 0;
 let expectedPlayers = 0;
 let playersJoined = 0;
+let checkpointArrivalCounts = [0, 0, 0, 0, 0];
+let roundActive = false;
 
 const powerupState = {};
 const lobbySlots = [null, null, null, null];
@@ -217,7 +219,11 @@ wss.on("connection", (ws) => {
         gridBonus: gridBonus,
         trackSegment: startTrackData.segment,
         hasMoved: true,
-        dead: false
+        dead: false,
+        totalScore: 0,
+        roundScore: 0,
+        roundCheckpointScores: [0, 0, 0, 0, 0],
+        readyForNext: false
       };
       console.log(sessionId, "joined as", rooms[sessionId].name);
       ws.send(JSON.stringify({ type: "playerNumber", number: playerNumber }));
@@ -270,6 +276,19 @@ wss.on("connection", (ws) => {
               player.currentCheckpoint++;
               console.log(sessionId, "passed checkpoint", cpIndex);
 
+              if (roundActive) {
+                const CHECKPOINT_POINTS = [10, 7, 5, 3];
+                const pts = CHECKPOINT_POINTS[checkpointArrivalCounts[cpIndex]] ?? 0;
+                checkpointArrivalCounts[cpIndex]++;
+                player.roundCheckpointScores[cpIndex] = pts;
+                player.roundScore += pts;
+                console.log(sessionId, "earned", pts, "points at checkpoint", cpIndex);
+
+                if (cpIndex === CHECKPOINTS.length - 1) {
+                  endRound();
+                }
+              }
+
               const spawns = CHECKPOINT_SPAWNS[cpIndex];
               const angle = CHECKPOINT_ANGLES[cpIndex];
               let spawnIndex = 0;
@@ -291,6 +310,15 @@ wss.on("connection", (ws) => {
                 }
               });
             }
+          }
+        }
+
+        if (roundActive) {
+          const allDead = Object.values(rooms).every(p => p.dead);
+          if (allDead) {
+            roundActive = false;
+            broadcast({ type: "allDead" });
+            setTimeout(() => resetRoundState(true), 2500);
           }
         }
 
@@ -331,6 +359,16 @@ wss.on("connection", (ws) => {
       }
     }
 
+    if (data.type === "readyForNextRound") {
+      if (rooms[sessionId]) {
+        rooms[sessionId].readyForNext = true;
+        const total = Object.keys(rooms).length;
+        const ready = Object.values(rooms).filter(p => p.readyForNext).length;
+        broadcast({ type: "roundReadyUpdate", ready, total });
+        if (ready === total) resetRoundState(true);
+      }
+    }
+
     if (data.type === "collectPowerup") {
       if (!powerupState[data.id].collected) {
         powerupState[data.id].collected = true;
@@ -360,6 +398,8 @@ wss.on("connection", (ws) => {
     if (Object.keys(rooms).length === 0) {
       cameraX = 0;
       playerCount = 0;
+      checkpointArrivalCounts = [0, 0, 0, 0, 0];
+      roundActive = false;
       for (let i = 0; i < 15; i++) {
         powerupState[i] = { collected: false };
       }
@@ -397,9 +437,47 @@ function startCountdown() {
       broadcast({ type: "countdown", count });
     } else {
       broadcast({ type: "go" });
+      roundActive = true;
       clearInterval(interval);
     }
   }, 1000);
+}
+
+function endRound() {
+  if (!roundActive) return;
+  roundActive = false;
+  Object.values(rooms).forEach(p => { p.totalScore += p.roundScore; });
+  const winnerEntry = Object.entries(rooms).find(([, p]) => p.totalScore >= 50);
+  broadcast({
+    type: "roundEnd",
+    players: rooms,
+    winnerId: winnerEntry ? winnerEntry[0] : null
+  });
+}
+
+function resetRoundState(startNew) {
+  checkpointArrivalCounts = [0, 0, 0, 0, 0];
+  for (let i = 0; i < 15; i++) powerupState[i] = { collected: false };
+  broadcast({ type: "powerupsReset" });
+  Object.entries(rooms).forEach(([id, p]) => {
+    p.currentCheckpoint = 0;
+    p.roundScore = 0;
+    p.roundCheckpointScores = [0, 0, 0, 0, 0];
+    p.readyForNext = false;
+    p.dead = false;
+    const pos = startPositions[p.playerNumber];
+    const td = getTrackDistance(pos.x, pos.y, TRACK_PATH, 0);
+    p.x = pos.x;
+    p.y = pos.y;
+    p.trackDistance = td.progress;
+    p.trackSegment = td.segment;
+    wss.clients.forEach(client => {
+      if (client.sessionId === id && client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify({ type: "respawn", x: pos.x, y: pos.y, angle: 180 }));
+      }
+    });
+  });
+  if (startNew) startCountdown();
 }
 
 function broadcast(data) {

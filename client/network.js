@@ -40,6 +40,8 @@ function connectToServer(playerName) {
         window.leaderY = data.leaderY || window.leaderY;
         window.leaderDirection = data.leaderDirection || 'left';
       }
+      const myPlayer = data.players[mySessionId];
+      if (myPlayer) window.myRoundScore = myPlayer.roundScore || 0;
       updateOtherPlayers(data.players);
     }
 
@@ -65,6 +67,38 @@ function connectToServer(playerName) {
         if (overlay) overlay.style.display = 'none';
         window.movementLocked = false;
       }, 900);
+    }
+
+    if (data.type === "allDead") {
+      window.movementLocked = true;
+      const overlay = document.getElementById('countdown-overlay');
+      const text = document.getElementById('countdown-text');
+      if (overlay && text) {
+        text.style.color = '#e84a4a';
+        text.style.fontSize = '60px';
+        text.textContent = 'Everyone wiped out!';
+        overlay.style.display = 'flex';
+        setTimeout(() => {
+          text.style.fontSize = '140px';
+          overlay.style.display = 'none';
+        }, 2000);
+      }
+    }
+
+    if (data.type === "roundEnd") {
+      window.movementLocked = true;
+      window.roundEndData = data;
+    }
+
+    if (data.type === "roundReadyUpdate") {
+      const statusEl = document.getElementById('ready-status');
+      if (statusEl) statusEl.textContent = data.ready + ' / ' + data.total + ' ready';
+    }
+
+    if (data.type === "powerupsReset") {
+      if (window.gameScene && window.gameScene.powerUps) {
+        window.gameScene.powerUps.reset();
+      }
     }
 
     if (data.type === "full") { console.log("Room is full!"); }

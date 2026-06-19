@@ -80,4 +80,11 @@ class PowerUps {
             this.powerups[id].box.setVisible(false);
         }
     }
+
+    reset() {
+        Object.values(this.powerups).forEach(p => {
+            p.collected = false;
+            p.box.setVisible(true);
+        });
+    }
 }
