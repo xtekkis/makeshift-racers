@@ -14,6 +14,8 @@ function showScoreboard(data) {
   readyBtn.textContent = 'Play Again';
   readyStatus.textContent = '';
   title.textContent = 'Round Results';
+  title.style.color = '';
+  title.style.fontSize = '';
   overlay.style.display = 'flex';
 
   const players = Object.values(data.players);
@@ -67,16 +69,27 @@ function showScoreboard(data) {
   function animateNextCP() {
     if (cp >= cpCount) {
       setTimeout(() => {
-        if (data.winnerId) {
-          const winner = data.players[data.winnerId];
-          title.textContent = (winner ? winner.name : 'Someone') + ' wins!';
-        }
         players.forEach(p => {
           const totalEl = document.getElementById('score-total-' + p.playerNumber);
           if (totalEl) totalEl.textContent = 'Total: ' + p.totalScore + ' pts';
         });
         footer.style.display = 'flex';
-        setupReadyButton();
+        if (data.winnerId) {
+          const winner = data.players[data.winnerId];
+          title.textContent = '🏆 ' + (winner ? winner.name : 'Someone') + ' Wins!';
+          title.style.color = '#e8c14a';
+          title.style.fontSize = '42px';
+          if (winner !== undefined) {
+            const winBar = bars[winner.playerNumber];
+            if (winBar) winBar.style.boxShadow = '0 0 18px 5px #e8c14a';
+          }
+          readyBtn.textContent = 'Back to Lobby';
+          readyBtn.disabled = false;
+          readyBtn.onclick = () => window.location.reload();
+          document.getElementById('ready-status').textContent = '';
+        } else {
+          setupReadyButton();
+        }
       }, 400);
       return;
     }
