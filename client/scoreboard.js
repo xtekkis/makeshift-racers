@@ -38,24 +38,18 @@ function showScoreboard(data) {
     const barOuter = document.createElement('div');
     barOuter.className = 'score-bar-outer';
 
-    const barPrev = document.createElement('div');
-    barPrev.className = 'score-bar score-bar-prev';
     const prevHeight = Math.min((p.totalScore - p.roundScore) / 250, 1) * 240;
-    barPrev.style.height = prevHeight + 'px';
-    barPrev.style.background = SCOREBOARD_COLORS[p.colorIndex !== undefined ? p.colorIndex : p.playerNumber] || '#fff';
-    barPrev.style.opacity = '0.35';
 
     const bar = document.createElement('div');
     bar.className = 'score-bar score-bar-round';
     bar.style.background = SCOREBOARD_COLORS[p.colorIndex !== undefined ? p.colorIndex : p.playerNumber] || '#fff';
-    bar.style.height = '0px';
+    bar.style.height = prevHeight + 'px';
     bars[p.playerNumber] = bar;
 
     const nameLabel = document.createElement('div');
     nameLabel.className = 'score-name-label';
     nameLabel.textContent = p.name || 'Player';
 
-    barOuter.appendChild(barPrev);
     barOuter.appendChild(bar);
     wrap.appendChild(totalLabel);
     wrap.appendChild(barOuter);
@@ -100,7 +94,7 @@ function showScoreboard(data) {
       const roundPts = displayedScores[p.playerNumber];
       const prevPts = p.totalScore - p.roundScore;
       const totalDisplayed = prevPts + roundPts;
-      const heightPx = Math.min(roundPts / 250, 1) * 240;
+      const heightPx = Math.min(totalDisplayed / 250, 1) * 240;
       bars[p.playerNumber].style.height = heightPx + 'px';
       const totalEl = document.getElementById('score-total-' + p.playerNumber);
       if (totalEl) totalEl.textContent = 'Total: ' + totalDisplayed + ' pts';
