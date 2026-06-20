@@ -5,6 +5,7 @@ function showScoreboard(data) {
   const barsEl = document.getElementById('scoreboard-bars');
   const footer = document.getElementById('scoreboard-footer');
   const title = document.getElementById('scoreboard-title');
+  const subtitle = document.getElementById('scoreboard-subtitle');
   const readyBtn = document.getElementById('ready-next-btn');
   const readyStatus = document.getElementById('ready-status');
 
@@ -16,6 +17,7 @@ function showScoreboard(data) {
   title.textContent = 'Round Results';
   title.style.color = '';
   title.style.fontSize = '';
+  subtitle.textContent = '';
   overlay.style.display = 'flex';
 
   const players = Object.values(data.players);
@@ -63,6 +65,7 @@ function showScoreboard(data) {
   function animateNextCP() {
     if (cp >= cpCount) {
       setTimeout(() => {
+        subtitle.textContent = '';
         players.forEach(p => {
           const totalEl = document.getElementById('score-total-' + p.playerNumber);
           if (totalEl) totalEl.textContent = 'Total: ' + p.totalScore + ' pts';
@@ -88,6 +91,7 @@ function showScoreboard(data) {
       return;
     }
 
+    subtitle.textContent = 'Checkpoint ' + (cp + 1);
     players.forEach(p => {
       const earned = (p.roundCheckpointScores && p.roundCheckpointScores[cp]) || 0;
       displayedScores[p.playerNumber] += earned;

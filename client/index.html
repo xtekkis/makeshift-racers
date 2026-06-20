@@ -223,6 +223,13 @@
       transition: color 0.4s, font-size 0.3s;
     }
 
+    #scoreboard-subtitle {
+      font-size: 16px;
+      color: #aaa;
+      letter-spacing: 1px;
+      min-height: 22px;
+    }
+
     #scoreboard-bars {
       display: flex;
       gap: 32px;
@@ -451,6 +458,7 @@
 
   <div id="scoreboard-overlay">
     <h2 id="scoreboard-title">Round Results</h2>
+    <div id="scoreboard-subtitle"></div>
     <div id="scoreboard-bars"></div>
     <div id="scoreboard-footer">
       <button id="ready-next-btn">Play Again</button>
