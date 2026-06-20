@@ -15,6 +15,12 @@ function connectToServer(playerName) {
 
     if (data.type === "playerNumber") {
       window.myPlayerNumber = data.number;
+      if (!window.playerName) {
+        window.playerName = 'Player ' + (data.number + 1);
+        if (window.gameScene && window.gameScene.playerLabel) {
+          window.gameScene.playerLabel.setText(window.playerName);
+        }
+      }
       const PLAYER_COLORS = [0xe8c14a, 0x4a8fe8, 0x4ae87a, 0xe84a4a, 0x9b4ae8, 0xe8874a, 0xe84a9b, 0x4ae8e8];
       const startPositions = [
         { x: 1900, y: 3566 },
@@ -103,6 +109,9 @@ function connectToServer(playerName) {
     if (data.type === "full") { console.log("Room is full!"); }
     if (data.type === "bumped") { window.incomingBump = { vx: data.vx, vy: data.vy }; }
     if (data.type === "respawn") { window.incomingRespawn = { x: data.x, y: data.y, angle: data.angle }; }
+    if (data.type === "itemAssigned") { if (window.setHeldItem) window.setHeldItem(data.item); }
+    if (data.type === "coinUpdate") { if (window.setCoins) window.setCoins(data.coins); }
+    if (data.type === "wrenchHit") { window.incomingWrench = true; }
     if (data.type === "powerupCollected") {
       if (window.gameScene && window.gameScene.powerUps) {
         window.gameScene.powerUps.removeById(data.id);
@@ -133,5 +142,11 @@ function sendPowerupCollected(id) {
 function sendBump(targetSessionId, vx, vy) {
   if (socket && socket.readyState === WebSocket.OPEN) {
     socket.send(JSON.stringify({ type: "bump", target: targetSessionId, vx, vy }));
+  }
+}
+
+function sendUseItem() {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({ type: "useItem" }));
   }
 }

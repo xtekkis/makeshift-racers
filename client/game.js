@@ -35,6 +35,11 @@ let spawnProtection = false;
 let spawnProtectionTimer = 0;
 const SPAWN_PROTECTION_DURATION = 5000;
 
+let myCoins = 0;
+let myHeldItem = null;
+let wrenchTimer = 0;
+const WRENCH_DURATION = 3000;
+
 const MAX_SPEED = 200;
 const MAX_REVERSE = 90;
 const ACCEL = 3;
@@ -71,6 +76,7 @@ function create() {
     left: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
     right: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D)
   };
+  this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
   this.playerAngle = 180;
   this.playerSpeed = 0;
@@ -81,6 +87,12 @@ function create() {
 
   window.gameScene = this;
   this.otherPlayers = {};
+
+  ['item-hud', 'coin-hud', 'position-hud'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'block';
+  });
+
   window.leaderX = 1900;
   window.leaderY = 3566;
   window.leaderDirection = 'left';
@@ -147,6 +159,9 @@ function update() {
     spawnProtection = true;
     spawnProtectionTimer = SPAWN_PROTECTION_DURATION;
     window.incomingRespawn = null;
+    myCoins = 0;
+    wrenchTimer = 0;
+    updateCoinHUD();
   }
 
   if (window.incomingBump && !spawnProtection) {
@@ -157,6 +172,11 @@ function update() {
     window.incomingBump = null;
   } else if (window.incomingBump) {
     window.incomingBump = null;
+  }
+
+  if (window.incomingWrench) {
+    wrenchTimer = WRENCH_DURATION;
+    window.incomingWrench = null;
   }
 
   // spawn protection timer
@@ -265,10 +285,21 @@ function update() {
   }
 
   if (!window.movementLocked) {
+    if (Phaser.Input.Keyboard.JustDown(this.spaceKey) && myHeldItem) {
+      sendUseItem();
+      myHeldItem = null;
+      updateItemHUD();
+    }
+
+    if (wrenchTimer > 0) wrenchTimer -= 16;
+    const baseMax = wrenchTimer > 0 ? MAX_SPEED * 0.3 : MAX_SPEED;
+    const currentMaxSpeed = baseMax * (1 + 0.15 * myCoins);
+    const currentTurnSpeed = Math.max(0.3, turnSpeed - 0.12 * myCoins);
+
     if (cursors.left.isDown || this.wasd.left.isDown) {
-      this.playerAngle -= turnSpeed;
+      this.playerAngle -= currentTurnSpeed;
     } else if (cursors.right.isDown || this.wasd.right.isDown) {
-      this.playerAngle += turnSpeed;
+      this.playerAngle += currentTurnSpeed;
     }
 
     const goingForward = cursors.up.isDown || this.wasd.up.isDown;
@@ -276,7 +307,6 @@ function update() {
 
     if (goingForward) {
       this.playerSpeed += ACCEL;
-      if (this.playerSpeed > MAX_SPEED) this.playerSpeed = MAX_SPEED;
     } else if (goingBack) {
       if (this.playerSpeed > 0) {
         this.playerSpeed -= DECEL_BRAKE;
@@ -294,6 +324,8 @@ function update() {
         if (this.playerSpeed > 0) this.playerSpeed = 0;
       }
     }
+
+    if (this.playerSpeed > currentMaxSpeed) this.playerSpeed = currentMaxSpeed;
   }
 
   const rad = Phaser.Math.DegToRad(this.playerAngle);
@@ -316,6 +348,15 @@ function update() {
 
   if (window.lastPlayers) {
     this.indicators.update(window.lastPlayers, mySessionId);
+    const myData = window.lastPlayers[mySessionId];
+    if (myData) {
+      const myScore = myData.currentCheckpoint * 100000 + (myData.trackDistance || 0);
+      const rank = 1 + Object.values(window.lastPlayers).filter(p =>
+        (p.currentCheckpoint * 100000 + (p.trackDistance || 0)) > myScore
+      ).length;
+      const posEl = document.getElementById('position-display');
+      if (posEl) posEl.textContent = ['1st', '2nd', '3rd', '4th'][rank - 1] || rank + 'th';
+    }
   }
 
   if (window.playerPositioned && !window.movementLocked) sendMove(this.playerBody.x, this.playerBody.y, this.playerAngle, isDead);
@@ -380,3 +421,20 @@ function updatePlayers(players, myId) {
 }
 
 window.updatePlayers = updatePlayers;
+
+function updateCoinHUD() {
+  const el = document.getElementById('coin-count');
+  if (el) el.textContent = myCoins;
+}
+
+function updateItemHUD() {
+  const el = document.getElementById('item-icon');
+  if (el) {
+    if (myHeldItem === 'coin') el.textContent = 'COIN';
+    else if (myHeldItem === 'wrench') el.textContent = 'WRENCH';
+    else el.textContent = '';
+  }
+}
+
+window.setCoins = (n) => { myCoins = n; updateCoinHUD(); };
+window.setHeldItem = (item) => { myHeldItem = item; updateItemHUD(); };

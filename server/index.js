@@ -176,6 +176,7 @@ wss.on("connection", (ws) => {
       lobbySlots[slotIndex] = { name: "Player " + (slotIndex + 1), color: null, ready: false };
       lobbyPlayerMap[sessionId] = slotIndex;
       broadcastLobby();
+      ws.send(JSON.stringify({ type: "lobbySlotIndex", index: slotIndex }));
     }
 
     if (data.type === "lobbyUpdate") {
@@ -220,10 +221,13 @@ wss.on("connection", (ws) => {
         trackSegment: startTrackData.segment,
         hasMoved: true,
         dead: false,
+        wasDead: false,
         totalScore: 0,
         roundScore: 0,
         roundCheckpointScores: [0, 0, 0, 0, 0],
-        readyForNext: false
+        readyForNext: false,
+        heldItem: null,
+        coins: 0,
       };
       console.log(sessionId, "joined as", rooms[sessionId].name);
       ws.send(JSON.stringify({ type: "playerNumber", number: playerNumber }));
@@ -261,6 +265,14 @@ wss.on("connection", (ws) => {
         player.x = data.x;
         player.y = data.y;
         player.angle = data.angle;
+
+        const justDied = !player.wasDead && (data.dead || false);
+        if (justDied) {
+          player.coins = 0;
+          player.heldItem = null;
+          ws.send(JSON.stringify({ type: "coinUpdate", coins: 0 }));
+        }
+        player.wasDead = data.dead || false;
         player.dead = data.dead || false;
 
         if (!player.dead) {
@@ -377,6 +389,45 @@ wss.on("connection", (ws) => {
         powerupState[data.id].collected = true;
         broadcast({ type: "powerupCollected", id: data.id });
         console.log(sessionId, "collected powerup", data.id);
+        const p = rooms[sessionId];
+        if (p && !p.heldItem) {
+          const sorted = Object.entries(rooms).sort(([, a], [, b]) => {
+            if (b.currentCheckpoint !== a.currentCheckpoint) return b.currentCheckpoint - a.currentCheckpoint;
+            return b.trackDistance - a.trackDistance;
+          });
+          const rank = sorted.findIndex(([id]) => id === sessionId) + 1;
+          const item = rank === 1 ? 'coin' : 'wrench';
+          p.heldItem = item;
+          ws.send(JSON.stringify({ type: "itemAssigned", item }));
+        }
+      }
+    }
+
+    if (data.type === "useItem") {
+      const p = rooms[sessionId];
+      if (!p || !p.heldItem) return;
+      const item = p.heldItem;
+      p.heldItem = null;
+
+      if (item === 'coin') {
+        p.coins = Math.min(p.coins + 1, 5);
+        ws.send(JSON.stringify({ type: "coinUpdate", coins: p.coins }));
+      }
+
+      if (item === 'wrench') {
+        const sorted = Object.entries(rooms).sort(([, a], [, b]) => {
+          if (b.currentCheckpoint !== a.currentCheckpoint) return b.currentCheckpoint - a.currentCheckpoint;
+          return b.trackDistance - a.trackDistance;
+        });
+        const myRank = sorted.findIndex(([id]) => id === sessionId);
+        if (myRank > 0) {
+          const [targetId] = sorted[myRank - 1];
+          wss.clients.forEach(client => {
+            if (client.sessionId === targetId && client.readyState === WebSocket.OPEN) {
+              client.send(JSON.stringify({ type: "wrenchHit" }));
+            }
+          });
+        }
       }
     }
     
@@ -468,6 +519,8 @@ function resetRoundState(startNew) {
     p.roundCheckpointScores = [0, 0, 0, 0, 0];
     p.readyForNext = false;
     p.dead = false;
+    p.wasDead = false;
+    p.heldItem = null;
     const pos = startPositions[p.playerNumber];
     const td = getTrackDistance(pos.x, pos.y, TRACK_PATH, 0);
     p.x = pos.x;

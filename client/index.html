@@ -302,6 +302,74 @@
       font-size: 14px;
       color: #aaa;
     }
+
+    #item-hud {
+      display: none;
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: rgba(0,0,0,0.65);
+      border: 2px solid #555;
+      border-radius: 8px;
+      padding: 8px 14px;
+      color: white;
+      text-align: center;
+      min-width: 80px;
+      z-index: 50;
+    }
+
+    .hud-label {
+      font-size: 10px;
+      color: #999;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    #item-icon {
+      font-size: 15px;
+      font-weight: bold;
+      min-height: 20px;
+    }
+
+    #coin-hud {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(0,0,0,0.65);
+      border: 2px solid #555;
+      border-radius: 8px;
+      padding: 8px 14px;
+      color: white;
+      text-align: center;
+      min-width: 80px;
+      z-index: 50;
+    }
+
+    #coin-count {
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    #position-hud {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(0,0,0,0.65);
+      border: 2px solid #555;
+      border-radius: 8px;
+      padding: 8px 14px;
+      color: white;
+      text-align: center;
+      min-width: 80px;
+      z-index: 50;
+    }
+
+    #position-display {
+      font-size: 22px;
+      font-weight: bold;
+    }
   </style>
 </head>
 
@@ -366,6 +434,20 @@
 
   <div id="game"></div>
   <div id="countdown-overlay"><span id="countdown-text"></span></div>
+
+  <div id="item-hud">
+    <div class="hud-label">ITEM</div>
+    <div id="item-icon"></div>
+  </div>
+  <div id="coin-hud">
+    <div class="hud-label">COINS</div>
+    <span id="coin-count">0</span>
+  </div>
+  <div id="position-hud">
+    <div class="hud-label">POSITION</div>
+    <span id="position-display">—</span>
+  </div>
+
   <div id="scoreboard-overlay">
     <h2 id="scoreboard-title">Round Results</h2>
     <div id="scoreboard-bars"></div>
@@ -379,6 +461,7 @@
     const COLORS = ['#e8c14a', '#4a8fe8', '#4ae87a', '#e84a4a', '#9b4ae8', '#e8874a', '#e84a9b', '#4ae8e8'];
     const HEX_COLORS = [0xe8c14a, 0x4a8fe8, 0x4ae87a, 0xe84a4a, 0x9b4ae8, 0xe8874a, 0xe84a9b, 0x4ae8e8];
     let selectedColor = null;
+    let mySlotIndex = null;
     let isReady = false;
 
     document.querySelectorAll('.color-swatch').forEach(swatch => {
@@ -428,6 +511,10 @@
         window.lobbySessionId = data.sessionId;
       }
 
+      if (data.type === 'lobbySlotIndex') {
+        mySlotIndex = data.index;
+      }
+
       if (data.type === 'gameStart') {
         startGame();
       }
@@ -444,9 +531,8 @@
         });
 
         // if our color got taken by someone else, deselect
-        if (selectedColor !== null && takenColors.includes(selectedColor) && !isReady) {
-          const mySlot = slots.find(s => s && s.color === selectedColor);
-          if (mySlot && mySlot.name !== (document.getElementById('nameInput').value || 'Player')) {
+        if (selectedColor !== null && !isReady && mySlotIndex !== null) {
+          if (slots[mySlotIndex]?.color !== selectedColor) {
             document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
             selectedColor = null;
             document.getElementById('myPreview').style.background = '#333';
