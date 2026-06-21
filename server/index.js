@@ -1,6 +1,23 @@
 const WebSocket = require("ws");
+const http = require("http");
+const fs = require("fs");
+const path = require("path");
 const PORT = 3000;
-const wss = new WebSocket.Server({ port: PORT });
+
+const CLIENT_DIR = path.join(__dirname, '..', 'client');
+const MIME = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.png': 'image/png' };
+
+const server = http.createServer((req, res) => {
+  const filePath = path.join(CLIENT_DIR, req.url === '/' ? 'index.html' : req.url);
+  fs.readFile(filePath, (err, data) => {
+    if (err) { res.writeHead(404); res.end('Not found'); return; }
+    res.writeHead(200, { 'Content-Type': MIME[path.extname(filePath)] || 'application/octet-stream', 'ngrok-skip-browser-warning': '1' });
+    res.end(data);
+  });
+});
+
+const wss = new WebSocket.Server({ server });
+server.listen(PORT, () => console.log(`Game server running on port ${PORT}`));
 const rooms = {};
 
 const CHECKPOINTS = [
@@ -544,4 +561,3 @@ function broadcast(data) {
   });
 }
 
-console.log(`Game server running on port ${PORT}`);

@@ -507,7 +507,8 @@
       }
     });
 
-    const lobbySocket = new WebSocket('ws://localhost:3000');
+    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const lobbySocket = new WebSocket(protocol + '//' + location.host);
     window.lobbySocket = lobbySocket;
 
     lobbySocket.onopen = () => {
