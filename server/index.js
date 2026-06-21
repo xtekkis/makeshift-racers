@@ -286,7 +286,6 @@ wss.on("connection", (ws) => {
         const justDied = !player.wasDead && (data.dead || false);
         if (justDied) {
           player.coins = 0;
-          player.heldItem = null;
           ws.send(JSON.stringify({ type: "coinUpdate", coins: 0 }));
         }
         player.wasDead = data.dead || false;
@@ -300,7 +299,7 @@ wss.on("connection", (ws) => {
           const nextCp = CHECKPOINTS[player.currentCheckpoint];
           if (nextCp) {
             const dist = Math.hypot(data.x - nextCp.x, data.y - nextCp.y);
-            if (dist < 50) {
+            if (dist < 120) {
               const cpIndex = player.currentCheckpoint;
               player.currentCheckpoint++;
               console.log(sessionId, "passed checkpoint", cpIndex);
@@ -326,8 +325,8 @@ wss.on("connection", (ws) => {
                 if (id !== sessionId && (p.dead || p.currentCheckpoint < cpIndex) && spawnIndex < spawns.length) {
                   const spawn = spawns[spawnIndex];
                   spawnIndex++;
-                  if (cpIndex > p.currentCheckpoint) {
-                    p.currentCheckpoint = cpIndex;
+                  if (cpIndex >= p.currentCheckpoint) {
+                    p.currentCheckpoint = cpIndex + 1;
                   }
                   wss.clients.forEach((client) => {
                     if (client.sessionId === id && client.readyState === WebSocket.OPEN) {

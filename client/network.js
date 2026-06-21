@@ -45,6 +45,9 @@ function connectToServer(playerName) {
         window.leaderX = data.leaderX || window.leaderX;
         window.leaderY = data.leaderY || window.leaderY;
         window.leaderDirection = data.leaderDirection || 'left';
+        const alive = Object.entries(data.players).filter(([,p]) => !p.dead);
+        const sorted = alive.sort(([,a],[,b]) => b.currentCheckpoint !== a.currentCheckpoint ? b.currentCheckpoint - a.currentCheckpoint : b.trackDistance - a.trackDistance);
+        window.iAmLeader = sorted.length > 0 && sorted[0][0] === mySessionId;
       }
       const myPlayer = data.players[mySessionId];
       if (myPlayer) window.myRoundScore = myPlayer.roundScore || 0;

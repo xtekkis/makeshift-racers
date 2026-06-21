@@ -40,11 +40,11 @@ let myHeldItem = null;
 let wrenchTimer = 0;
 const WRENCH_DURATION = 3000;
 
-const MAX_SPEED = 200;
-const MAX_REVERSE = 90;
-const ACCEL = 3;
-const DECEL_RELEASE = 2;
-const DECEL_BRAKE = 12;
+const MAX_SPEED = 400;
+const MAX_REVERSE = 180;
+const ACCEL = 6;
+const DECEL_RELEASE = 4;
+const DECEL_BRAKE = 24;
 
 function preload() { }
 
@@ -120,14 +120,18 @@ function checkCollisions(scene) {
     if (p.dead) return;
     if (id === mySessionId) return;
     const dist = Math.hypot(scene.playerBody.x - p.x, scene.playerBody.y - p.y);
-    if (dist < 25 && dist > 0) {
-      const angle = Math.atan2(scene.playerBody.y - p.y, scene.playerBody.x - p.x);
-      const force = 400;
-      bumpVx = Math.cos(angle) * force;
-      bumpVy = Math.sin(angle) * force;
-      bumpTimer = 500;
-      scene.playerSpeed = 0;
-      sendBump(id, -Math.cos(angle) * force, -Math.sin(angle) * force);
+    if (dist < 25 && dist > 0 && scene.playerSpeed > 80) {
+      const toOther = Math.atan2(p.y - scene.playerBody.y, p.x - scene.playerBody.x);
+      const localRad = Phaser.Math.DegToRad(scene.playerAngle);
+      if (Math.cos(toOther - localRad) > 0) {
+        const angle = Math.atan2(scene.playerBody.y - p.y, scene.playerBody.x - p.x);
+        const force = 400;
+        bumpVx = Math.cos(angle) * force;
+        bumpVy = Math.sin(angle) * force;
+        bumpTimer = 500;
+        scene.playerSpeed = 0;
+        sendBump(id, -Math.cos(angle) * force, -Math.sin(angle) * force);
+      }
     }
   });
 }
@@ -142,7 +146,7 @@ function isOverlappingAnyPlayer(scene) {
   });
 }
 
-function update() {
+function update(time, delta) {
   const turnSpeed = 1;
 
   if (window.incomingRespawn) {
@@ -195,8 +199,8 @@ function update() {
   if (isDead) {
     deathTimer -= 16;
 
-    const leaderX = window.leaderX || this.playerBody.x;
-    const leaderY = window.leaderY || this.playerBody.y;
+    const leaderX = window.iAmLeader ? this.playerBody.x : (window.leaderX || this.playerBody.x);
+    const leaderY = window.iAmLeader ? this.playerBody.y : (window.leaderY || this.playerBody.y);
     const direction = window.leaderDirection || 'left';
     const target = getTargetOffset(direction);
     camOffsetX += (target.x - camOffsetX) * 0.05;
@@ -228,8 +232,8 @@ function update() {
     this.playerLabel.x = this.playerBody.x;
     this.playerLabel.y = this.playerBody.y - 20;
 
-    const leaderX = window.leaderX || this.playerBody.x;
-    const leaderY = window.leaderY || this.playerBody.y;
+    const leaderX = window.iAmLeader ? this.playerBody.x : (window.leaderX || this.playerBody.x);
+    const leaderY = window.iAmLeader ? this.playerBody.y : (window.leaderY || this.playerBody.y);
     const direction = window.leaderDirection || 'left';
     const target = getTargetOffset(direction);
     camOffsetX += (target.x - camOffsetX) * 0.05;
@@ -291,7 +295,7 @@ function update() {
       updateItemHUD();
     }
 
-    if (wrenchTimer > 0) wrenchTimer -= 16;
+    if (wrenchTimer > 0) wrenchTimer -= delta;
     const baseMax = wrenchTimer > 0 ? MAX_SPEED * 0.3 : MAX_SPEED;
     const currentMaxSpeed = baseMax * (1 + 0.15 * myCoins);
     const currentTurnSpeed = Math.max(0.3, turnSpeed - 0.12 * myCoins);
@@ -332,8 +336,8 @@ function update() {
   const vx = Math.cos(rad) * this.playerSpeed;
   const vy = Math.sin(rad) * this.playerSpeed;
 
-  this.playerBody.x += vx * 0.016;
-  this.playerBody.y += vy * 0.016;
+  this.playerBody.x += vx * (delta / 1000);
+  this.playerBody.y += vy * (delta / 1000);
 
   player.x = this.playerBody.x;
   player.y = this.playerBody.y;
