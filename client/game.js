@@ -57,6 +57,11 @@ const SPRITE_SCALE = 0.1;
 const SPRITE_ANGLE_OFFSET = -90;
 const NUM_CAR_VARIANTS = 8;
 
+const VEHICLE_STATS = {
+  f1:  { turnSpeed: 1.0 },
+  car: { turnSpeed: 2.5 },
+};
+
 function preload() {
   for (let i = 0; i < NUM_CAR_VARIANTS; i++) {
     this.load.image('f1_' + i,          'assets/f1_' + i + '.png');
@@ -163,7 +168,7 @@ function isOverlappingAnyPlayer(scene) {
 }
 
 function update(time, delta) {
-  const turnSpeed = 1;
+  const { turnSpeed } = VEHICLE_STATS[window.vehicleType || 'f1'];
 
   if (window.incomingRespawn) {
     const r = window.incomingRespawn;
