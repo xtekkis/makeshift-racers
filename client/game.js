@@ -30,6 +30,9 @@ let camOffsetY = 0;
 let bumpTimer = 0;
 let bumpVx = 0;
 let bumpVy = 0;
+const BUMP_DURATION = 500;
+const BUMP_FORCE = 400;
+const BUMP_DECAY = 0.92;
 
 let spawnProtection = false;
 let spawnProtectionTimer = 0;
@@ -45,6 +48,11 @@ const MAX_REVERSE = 180;
 const ACCEL = 6;
 const DECEL_RELEASE = 4;
 const DECEL_BRAKE = 24;
+const DEATH_DURATION = 2000;
+const COLLISION_RADIUS = 25;
+const COLLISION_MIN_SPEED = 80;
+const CAM_LERP = 0.05;
+const FRAME_MS = 1000 / 60;
 
 function preload() { }
 
@@ -120,17 +128,16 @@ function checkCollisions(scene) {
     if (p.dead) return;
     if (id === mySessionId) return;
     const dist = Math.hypot(scene.playerBody.x - p.x, scene.playerBody.y - p.y);
-    if (dist < 25 && dist > 0 && scene.playerSpeed > 80) {
+    if (dist < COLLISION_RADIUS && dist > 0 && scene.playerSpeed > COLLISION_MIN_SPEED) {
       const toOther = Math.atan2(p.y - scene.playerBody.y, p.x - scene.playerBody.x);
       const localRad = Phaser.Math.DegToRad(scene.playerAngle);
       if (Math.cos(toOther - localRad) > 0) {
         const angle = Math.atan2(scene.playerBody.y - p.y, scene.playerBody.x - p.x);
-        const force = 400;
-        bumpVx = Math.cos(angle) * force;
-        bumpVy = Math.sin(angle) * force;
-        bumpTimer = 500;
+        bumpVx = Math.cos(angle) * BUMP_FORCE;
+        bumpVy = Math.sin(angle) * BUMP_FORCE;
+        bumpTimer = BUMP_DURATION;
         scene.playerSpeed = 0;
-        sendBump(id, -Math.cos(angle) * force, -Math.sin(angle) * force);
+        sendBump(id, -Math.cos(angle) * BUMP_FORCE, -Math.sin(angle) * BUMP_FORCE);
       }
     }
   });
@@ -142,7 +149,7 @@ function isOverlappingAnyPlayer(scene) {
     if (id === mySessionId) return false;
     if (p.dead) return false;
     const dist = Math.hypot(scene.playerBody.x - p.x, scene.playerBody.y - p.y);
-    return dist < 25;
+    return dist < COLLISION_RADIUS;
   });
 }
 
@@ -171,7 +178,7 @@ function update(time, delta) {
   if (window.incomingBump && !spawnProtection) {
     bumpVx = window.incomingBump.vx;
     bumpVy = window.incomingBump.vy;
-    bumpTimer = 500;
+    bumpTimer = BUMP_DURATION;
     this.playerSpeed = 0;
     window.incomingBump = null;
   } else if (window.incomingBump) {
@@ -185,7 +192,7 @@ function update(time, delta) {
 
   // spawn protection timer
   if (spawnProtection) {
-    spawnProtectionTimer -= 16;
+    spawnProtectionTimer -= delta;
     if (spawnProtectionTimer <= 0) {
       if (!isOverlappingAnyPlayer(this)) {
         spawnProtection = false;
@@ -197,14 +204,14 @@ function update(time, delta) {
   }
 
   if (isDead) {
-    deathTimer -= 16;
+    deathTimer -= delta;
 
     const leaderX = window.iAmLeader ? this.playerBody.x : (window.leaderX || this.playerBody.x);
     const leaderY = window.iAmLeader ? this.playerBody.y : (window.leaderY || this.playerBody.y);
     const direction = window.leaderDirection || 'left';
     const target = getTargetOffset(direction);
-    camOffsetX += (target.x - camOffsetX) * 0.05;
-    camOffsetY += (target.y - camOffsetY) * 0.05;
+    camOffsetX += (target.x - camOffsetX) * CAM_LERP;
+    camOffsetY += (target.y - camOffsetY) * CAM_LERP;
     const scrollX = Math.max(0, Math.min(leaderX - 640 + camOffsetX, 6000 - 1280));
     const scrollY = Math.max(0, Math.min(leaderY - 360 + camOffsetY, 5000 - 720));
     this.cameras.main.setScroll(scrollX, scrollY);
@@ -220,11 +227,11 @@ function update(time, delta) {
   }
 
   if (bumpTimer > 0) {
-    bumpTimer -= 16;
-    this.playerBody.x += bumpVx * 0.016;
-    this.playerBody.y += bumpVy * 0.016;
-    bumpVx *= 0.92;
-    bumpVy *= 0.92;
+    bumpTimer -= delta;
+    this.playerBody.x += bumpVx * (delta / 1000);
+    this.playerBody.y += bumpVy * (delta / 1000);
+    bumpVx *= Math.pow(BUMP_DECAY, delta / FRAME_MS);
+    bumpVy *= Math.pow(BUMP_DECAY, delta / FRAME_MS);
 
     player.x = this.playerBody.x;
     player.y = this.playerBody.y;
@@ -236,8 +243,8 @@ function update(time, delta) {
     const leaderY = window.iAmLeader ? this.playerBody.y : (window.leaderY || this.playerBody.y);
     const direction = window.leaderDirection || 'left';
     const target = getTargetOffset(direction);
-    camOffsetX += (target.x - camOffsetX) * 0.05;
-    camOffsetY += (target.y - camOffsetY) * 0.05;
+    camOffsetX += (target.x - camOffsetX) * CAM_LERP;
+    camOffsetY += (target.y - camOffsetY) * CAM_LERP;
     const scrollX = Math.max(0, Math.min(leaderX - 640 + camOffsetX, 6000 - 1280));
     const scrollY = Math.max(0, Math.min(leaderY - 360 + camOffsetY, 5000 - 720));
     this.cameras.main.setScroll(scrollX, scrollY);
@@ -249,15 +256,15 @@ function update(time, delta) {
   if (!spawnProtection) {
     if (this.track.isOffTrack(this.playerBody.x, this.playerBody.y)) {
       isDead = true;
-      deathTimer = 2000;
+      deathTimer = DEATH_DURATION;
       this.playerSpeed = 0;
       player.setAlpha(0.3);
       console.log("Player died!");
     }
   }
 
-  const leaderX = window.leaderX || this.playerBody.x;
-  const leaderY = window.leaderY || this.playerBody.y;
+  const leaderX = window.iAmLeader ? this.playerBody.x : (window.leaderX || this.playerBody.x);
+  const leaderY = window.iAmLeader ? this.playerBody.y : (window.leaderY || this.playerBody.y);
   const direction = window.leaderDirection || 'left';
 
   const target = getTargetOffset(direction);
@@ -275,10 +282,10 @@ function update(time, delta) {
     this.playerBody.y > scrollY + 720 + margin;
 
   if (isOutOfView && !spawnProtection) {
-    outOfBoundsTimer += 16;
+    outOfBoundsTimer += delta;
     if (outOfBoundsTimer >= OUT_OF_BOUNDS_LIMIT) {
       isDead = true;
-      deathTimer = 2000;
+      deathTimer = DEATH_DURATION;
       outOfBoundsTimer = 0;
       this.playerSpeed = 0;
       player.setAlpha(0.3);
@@ -298,7 +305,7 @@ function update(time, delta) {
     if (wrenchTimer > 0) wrenchTimer -= delta;
     const baseMax = wrenchTimer > 0 ? MAX_SPEED * 0.3 : MAX_SPEED;
     const currentMaxSpeed = baseMax * (1 + 0.15 * myCoins);
-    const currentTurnSpeed = Math.max(0.3, turnSpeed - 0.12 * myCoins);
+    const currentTurnSpeed = Math.max(0.3, turnSpeed - 0.12 * myCoins) * (delta / FRAME_MS);
 
     if (cursors.left.isDown || this.wasd.left.isDown) {
       this.playerAngle -= currentTurnSpeed;
@@ -309,22 +316,23 @@ function update(time, delta) {
     const goingForward = cursors.up.isDown || this.wasd.up.isDown;
     const goingBack = cursors.down.isDown || this.wasd.down.isDown;
 
+    const dt = delta / FRAME_MS;
     if (goingForward) {
-      this.playerSpeed += ACCEL;
+      this.playerSpeed += ACCEL * dt;
     } else if (goingBack) {
       if (this.playerSpeed > 0) {
-        this.playerSpeed -= DECEL_BRAKE;
+        this.playerSpeed -= DECEL_BRAKE * dt;
         if (this.playerSpeed < 0) this.playerSpeed = 0;
       } else {
-        this.playerSpeed -= ACCEL;
+        this.playerSpeed -= ACCEL * dt;
         if (this.playerSpeed < -MAX_REVERSE) this.playerSpeed = -MAX_REVERSE;
       }
     } else {
       if (this.playerSpeed > 0) {
-        this.playerSpeed -= DECEL_RELEASE;
+        this.playerSpeed -= DECEL_RELEASE * dt;
         if (this.playerSpeed < 0) this.playerSpeed = 0;
       } else if (this.playerSpeed < 0) {
-        this.playerSpeed += DECEL_RELEASE;
+        this.playerSpeed += DECEL_RELEASE * dt;
         if (this.playerSpeed > 0) this.playerSpeed = 0;
       }
     }
