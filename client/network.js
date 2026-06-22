@@ -21,7 +21,6 @@ function connectToServer(playerName) {
           window.gameScene.playerLabel.setText(window.playerName);
         }
       }
-      const PLAYER_COLORS = [0xe8c14a, 0x4a8fe8, 0x4ae87a, 0xe84a4a, 0x9b4ae8, 0xe8874a, 0xe84a9b, 0x4ae8e8];
       const startPositions = [
         { x: 1900, y: 3566 },
         { x: 2000, y: 3632 },
@@ -34,7 +33,9 @@ function connectToServer(playerName) {
         window.gameScene.playerBody.y = pos.y;
         player.x = pos.x;
         player.y = pos.y;
-        player.setFillStyle(PLAYER_COLORS[window.playerColorIndex !== null ? window.playerColorIndex : data.number]);
+        const idx = window.playerColorIndex !== null ? window.playerColorIndex : data.number;
+        window.gameScene.carIndex = idx;
+        player.setTexture('f1_' + idx);
       }
       window.playerPositioned = true;
     }

@@ -53,23 +53,32 @@ const COLLISION_RADIUS = 25;
 const COLLISION_MIN_SPEED = 80;
 const CAM_LERP = 0.05;
 const FRAME_MS = 1000 / 60;
+const SPRITE_SCALE = 0.1;
+const SPRITE_ANGLE_OFFSET = -90;
+const NUM_CAR_VARIANTS = 8;
 
-function preload() { }
+function preload() {
+  for (let i = 0; i < NUM_CAR_VARIANTS; i++) {
+    this.load.image('f1_' + i,          'assets/f1_' + i + '.png');
+    this.load.image('f1_' + i + '_left', 'assets/f1_' + i + '_left.png');
+    this.load.image('f1_' + i + '_right','assets/f1_' + i + '_right.png');
+  }
+}
 
 function create() {
   this.track = new Track(this);
   this.indicators = new Indicators(this);
   this.powerUps = new PowerUps(this);
 
-  player = this.add.circle(1900, 3566, 12, 0xe8c14a);
-  const PLAYER_COLORS = [0xe8c14a, 0x4a8fe8, 0x4ae87a, 0xe84a4a, 0x9b4ae8, 0xe8874a, 0xe84a9b, 0x4ae8e8];
-  if (window.playerColorIndex !== null && window.playerColorIndex !== undefined) {
-    player.setFillStyle(PLAYER_COLORS[window.playerColorIndex]);
-  }
+  this.carIndex = (window.playerColorIndex !== null && window.playerColorIndex !== undefined)
+    ? window.playerColorIndex : 0;
+  player = this.add.image(1900, 3566, 'f1_' + this.carIndex);
+  player.setScale(SPRITE_SCALE);
+  player.setAngle(180 + SPRITE_ANGLE_OFFSET);
+  player.setDepth(1);
   this.playerLabel = this.add.text(1900, 3566 - 20, window.playerName || 'Player', {
     fontSize: '16px', fill: '#ffffff'
   }).setDepth(10).setOrigin(0.5);
-  player.setDepth(1);
 
   this.playerBody = this.physics.add.existing(
     this.add.rectangle(1900, 3566, 24, 24, 0x000000, 0)
@@ -166,6 +175,8 @@ function update(time, delta) {
     player.y = r.y;
     this.playerAngle = r.angle;
     this.playerSpeed = 0;
+    player.setTexture('f1_' + this.carIndex);
+    player.setAngle(this.playerAngle + SPRITE_ANGLE_OFFSET);
     player.setAlpha(0.4);
     spawnProtection = true;
     spawnProtectionTimer = SPAWN_PROTECTION_DURATION;
@@ -235,6 +246,7 @@ function update(time, delta) {
 
     player.x = this.playerBody.x;
     player.y = this.playerBody.y;
+    player.setAngle(this.playerAngle + SPRITE_ANGLE_OFFSET);
 
     this.playerLabel.x = this.playerBody.x;
     this.playerLabel.y = this.playerBody.y - 20;
@@ -349,6 +361,13 @@ function update(time, delta) {
 
   player.x = this.playerBody.x;
   player.y = this.playerBody.y;
+  let texSuffix = '';
+  if (!window.movementLocked) {
+    if (cursors.left.isDown || this.wasd.left.isDown) texSuffix = '_left';
+    else if (cursors.right.isDown || this.wasd.right.isDown) texSuffix = '_right';
+  }
+  player.setTexture('f1_' + this.carIndex + texSuffix);
+  player.setAngle(this.playerAngle + SPRITE_ANGLE_OFFSET);
 
   this.playerLabel.x = this.playerBody.x;
   this.playerLabel.y = this.playerBody.y - 20;
@@ -394,9 +413,10 @@ function updatePlayers(players, myId) {
     }
 
     if (!scene.otherPlayers[id]) {
-      const PLAYER_COLORS = [0xe8c14a, 0x4a8fe8, 0x4ae87a, 0xe84a4a, 0x9b4ae8, 0xe8874a, 0xe84a9b, 0x4ae8e8];
-      const color = PLAYER_COLORS[p.colorIndex !== undefined ? p.colorIndex : p.playerNumber] || 0x4a8fe8;
-      scene.otherPlayers[id] = scene.add.circle(p.x, p.y, 12, color);
+      const idx = Math.min(p.colorIndex !== undefined ? p.colorIndex : (p.playerNumber || 0), NUM_CAR_VARIANTS - 1);
+      scene.otherPlayers[id] = scene.add.image(p.x, p.y, 'f1_' + idx);
+      scene.otherPlayers[id].setScale(SPRITE_SCALE);
+      scene.otherPlayers[id].setAngle((p.angle || 0) + SPRITE_ANGLE_OFFSET);
       scene.otherPlayers[id].setDepth(1);
       if (!scene.otherPlayerLabels) scene.otherPlayerLabels = {};
       if (!scene.otherPlayerLabels[id]) {
@@ -408,6 +428,7 @@ function updatePlayers(players, myId) {
       scene.otherPlayers[id].setVisible(true);
       scene.otherPlayers[id].x = p.x;
       scene.otherPlayers[id].y = p.y;
+      scene.otherPlayers[id].setAngle((p.angle || 0) + SPRITE_ANGLE_OFFSET);
       if (scene.otherPlayerLabels && scene.otherPlayerLabels[id]) {
         scene.otherPlayerLabels[id].setVisible(true);
         scene.otherPlayerLabels[id].x = p.x;
