@@ -49,25 +49,31 @@ const ACCEL = 6;
 const DECEL_RELEASE = 4;
 const DECEL_BRAKE = 24;
 const DEATH_DURATION = 2000;
-const COLLISION_RADIUS = 25;
 const COLLISION_MIN_SPEED = 80;
 const CAM_LERP = 0.05;
 const FRAME_MS = 1000 / 60;
-const SPRITE_SCALE = 0.1;
-const SPRITE_ANGLE_OFFSET = -90;
 const NUM_CAR_VARIANTS = 8;
 
 const VEHICLE_STATS = {
-  f1:  { turnSpeed: 1.0 },
-  car: { turnSpeed: 2.5 },
+  f1:    { turnSpeed: 1.0, scaleX: 0.1,  scaleY: 0.1,  accel: 6, angleOffset: -90, collisionRadius: 25 },
+  car:   { turnSpeed: 2.5, scaleX: 0.44, scaleY: 0.32, accel: 6, angleOffset:  90, collisionRadius: 30 },
+  truck: { turnSpeed: 2.5, scaleX: 0.75, scaleY: 0.4,  accel: 3, angleOffset:  90, collisionRadius: 38 },
 };
+
+function getVehicleTexKey(vType, carIndex, turning) {
+  if (vType === 'truck') return 'truck_0';
+  if (turning) return vType + '_' + carIndex + turning;
+  return vType + '_' + carIndex;
+}
 
 function preload() {
   for (let i = 0; i < NUM_CAR_VARIANTS; i++) {
-    this.load.image('f1_' + i,          'assets/f1_' + i + '.png');
+    this.load.image('f1_' + i,           'assets/f1_' + i + '.png');
     this.load.image('f1_' + i + '_left', 'assets/f1_' + i + '_left.png');
     this.load.image('f1_' + i + '_right','assets/f1_' + i + '_right.png');
+    this.load.image('car_' + i,          'assets/car_' + i + '.png');
   }
+  this.load.image('truck_0', 'assets/truck_0.png');
 }
 
 function create() {
@@ -75,11 +81,13 @@ function create() {
   this.indicators = new Indicators(this);
   this.powerUps = new PowerUps(this);
 
+  const vType = window.vehicleType || 'f1';
+  const createStats = VEHICLE_STATS[vType];
   this.carIndex = (window.playerColorIndex !== null && window.playerColorIndex !== undefined)
     ? window.playerColorIndex : 0;
-  player = this.add.image(1900, 3566, 'f1_' + this.carIndex);
-  player.setScale(SPRITE_SCALE);
-  player.setAngle(180 + SPRITE_ANGLE_OFFSET);
+  player = this.add.image(1900, 3566, getVehicleTexKey(vType, this.carIndex));
+  player.setScale(createStats.scaleX, createStats.scaleY);
+  player.setAngle(180 + createStats.angleOffset);
   player.setDepth(1);
   this.playerLabel = this.add.text(1900, 3566 - 20, window.playerName || 'Player', {
     fontSize: '16px', fill: '#ffffff'
@@ -133,7 +141,7 @@ function getTargetOffset(direction) {
   }
 }
 
-function checkCollisions(scene) {
+function checkCollisions(scene, collisionRadius) {
   if (!window.lastPlayers) return;
   if (bumpTimer > 0) return;
   if (spawnProtection) return;
@@ -142,7 +150,7 @@ function checkCollisions(scene) {
     if (p.dead) return;
     if (id === mySessionId) return;
     const dist = Math.hypot(scene.playerBody.x - p.x, scene.playerBody.y - p.y);
-    if (dist < COLLISION_RADIUS && dist > 0 && scene.playerSpeed > COLLISION_MIN_SPEED) {
+    if (dist < collisionRadius && dist > 0 && scene.playerSpeed > COLLISION_MIN_SPEED) {
       const toOther = Math.atan2(p.y - scene.playerBody.y, p.x - scene.playerBody.x);
       const localRad = Phaser.Math.DegToRad(scene.playerAngle);
       if (Math.cos(toOther - localRad) > 0) {
@@ -159,16 +167,18 @@ function checkCollisions(scene) {
 
 function isOverlappingAnyPlayer(scene) {
   if (!window.lastPlayers) return false;
+  const { collisionRadius } = VEHICLE_STATS[window.vehicleType || 'f1'];
   return Object.entries(window.lastPlayers).some(([id, p]) => {
     if (id === mySessionId) return false;
     if (p.dead) return false;
     const dist = Math.hypot(scene.playerBody.x - p.x, scene.playerBody.y - p.y);
-    return dist < COLLISION_RADIUS;
+    return dist < collisionRadius;
   });
 }
 
 function update(time, delta) {
-  const { turnSpeed } = VEHICLE_STATS[window.vehicleType || 'f1'];
+  const vType = window.vehicleType || 'f1';
+  const { turnSpeed, angleOffset, accel, collisionRadius } = VEHICLE_STATS[vType];
 
   if (window.incomingRespawn) {
     const r = window.incomingRespawn;
@@ -180,8 +190,8 @@ function update(time, delta) {
     player.y = r.y;
     this.playerAngle = r.angle;
     this.playerSpeed = 0;
-    player.setTexture('f1_' + this.carIndex);
-    player.setAngle(this.playerAngle + SPRITE_ANGLE_OFFSET);
+    player.setTexture(getVehicleTexKey(vType, this.carIndex));
+    player.setAngle(this.playerAngle + angleOffset);
     player.setAlpha(0.4);
     spawnProtection = true;
     spawnProtectionTimer = SPAWN_PROTECTION_DURATION;
@@ -251,7 +261,7 @@ function update(time, delta) {
 
     player.x = this.playerBody.x;
     player.y = this.playerBody.y;
-    player.setAngle(this.playerAngle + SPRITE_ANGLE_OFFSET);
+    player.setAngle(this.playerAngle + angleOffset);
 
     this.playerLabel.x = this.playerBody.x;
     this.playerLabel.y = this.playerBody.y - 20;
@@ -335,7 +345,7 @@ function update(time, delta) {
 
     const dt = delta / FRAME_MS;
     if (goingForward) {
-      this.playerSpeed += ACCEL * dt;
+      this.playerSpeed += accel * dt;
     } else if (goingBack) {
       if (this.playerSpeed > 0) {
         this.playerSpeed -= DECEL_BRAKE * dt;
@@ -366,19 +376,19 @@ function update(time, delta) {
 
   player.x = this.playerBody.x;
   player.y = this.playerBody.y;
-  let texSuffix = '';
-  if (!window.movementLocked) {
-    if (cursors.left.isDown || this.wasd.left.isDown) texSuffix = '_left';
-    else if (cursors.right.isDown || this.wasd.right.isDown) texSuffix = '_right';
+  let turning = '';
+  if (vType === 'f1' && !window.movementLocked) {
+    if (cursors.left.isDown || this.wasd.left.isDown) turning = '_left';
+    else if (cursors.right.isDown || this.wasd.right.isDown) turning = '_right';
   }
-  player.setTexture('f1_' + this.carIndex + texSuffix);
-  player.setAngle(this.playerAngle + SPRITE_ANGLE_OFFSET);
+  player.setTexture(getVehicleTexKey(vType, this.carIndex, turning));
+  player.setAngle(this.playerAngle + angleOffset);
 
   this.playerLabel.x = this.playerBody.x;
   this.playerLabel.y = this.playerBody.y - 20;
 
   if (!window.movementLocked) {
-    checkCollisions(this);
+    checkCollisions(this, collisionRadius);
     this.powerUps.checkCollection(this.playerBody.x, this.playerBody.y);
   }
 
@@ -418,10 +428,12 @@ function updatePlayers(players, myId) {
     }
 
     if (!scene.otherPlayers[id]) {
+      const pVType = p.vehicleType || 'f1';
+      const pStats = VEHICLE_STATS[pVType] || VEHICLE_STATS.f1;
       const idx = Math.min(p.colorIndex !== undefined ? p.colorIndex : (p.playerNumber || 0), NUM_CAR_VARIANTS - 1);
-      scene.otherPlayers[id] = scene.add.image(p.x, p.y, 'f1_' + idx);
-      scene.otherPlayers[id].setScale(SPRITE_SCALE);
-      scene.otherPlayers[id].setAngle((p.angle || 0) + SPRITE_ANGLE_OFFSET);
+      scene.otherPlayers[id] = scene.add.image(p.x, p.y, getVehicleTexKey(pVType, idx));
+      scene.otherPlayers[id].setScale(pStats.scaleX, pStats.scaleY);
+      scene.otherPlayers[id].setAngle((p.angle || 0) + pStats.angleOffset);
       scene.otherPlayers[id].setDepth(1);
       if (!scene.otherPlayerLabels) scene.otherPlayerLabels = {};
       if (!scene.otherPlayerLabels[id]) {
@@ -430,10 +442,12 @@ function updatePlayers(players, myId) {
         }).setDepth(10).setOrigin(0.5);
       }
     } else {
+      const pVType = p.vehicleType || 'f1';
+      const pStats = VEHICLE_STATS[pVType] || VEHICLE_STATS.f1;
       scene.otherPlayers[id].setVisible(true);
       scene.otherPlayers[id].x = p.x;
       scene.otherPlayers[id].y = p.y;
-      scene.otherPlayers[id].setAngle((p.angle || 0) + SPRITE_ANGLE_OFFSET);
+      scene.otherPlayers[id].setAngle((p.angle || 0) + pStats.angleOffset);
       if (scene.otherPlayerLabels && scene.otherPlayerLabels[id]) {
         scene.otherPlayerLabels[id].setVisible(true);
         scene.otherPlayerLabels[id].x = p.x;

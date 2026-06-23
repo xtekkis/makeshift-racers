@@ -190,7 +190,7 @@ wss.on("connection", (ws) => {
         ws.close();
         return;
       }
-      lobbySlots[slotIndex] = { name: "Player " + (slotIndex + 1), color: null, ready: false };
+      lobbySlots[slotIndex] = { name: "Player " + (slotIndex + 1), color: null, ready: false, vehicleType: 'f1' };
       lobbyPlayerMap[sessionId] = slotIndex;
       broadcastLobby();
       ws.send(JSON.stringify({ type: "lobbySlotIndex", index: slotIndex }));
@@ -202,6 +202,7 @@ wss.on("connection", (ws) => {
         lobbySlots[slotIndex].name = data.name || ("Player " + (slotIndex + 1));
         lobbySlots[slotIndex].color = data.color;
         lobbySlots[slotIndex].ready = data.ready;
+        lobbySlots[slotIndex].vehicleType = data.vehicleType || 'f1';
         broadcastLobby();
 
         const connected = lobbySlots.filter(s => s);
@@ -237,6 +238,7 @@ wss.on("connection", (ws) => {
         gridBonus: gridBonus,
         trackSegment: startTrackData.segment,
         hasMoved: true,
+        vehicleType: data.vehicleType || 'f1',
         dead: false,
         wasDead: false,
         totalScore: 0,

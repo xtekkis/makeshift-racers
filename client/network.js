@@ -123,7 +123,7 @@ function connectToServer(playerName) {
     }
   };
 
-  socket.send(JSON.stringify({ type: "join", name: playerName }));
+  socket.send(JSON.stringify({ type: "join", name: playerName, vehicleType: window.vehicleType || 'f1' }));
 }
 
 function sendMove(x, y, angle, dead) {
