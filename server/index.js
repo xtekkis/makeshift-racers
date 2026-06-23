@@ -239,6 +239,7 @@ wss.on("connection", (ws) => {
         trackSegment: startTrackData.segment,
         hasMoved: true,
         vehicleType: data.vehicleType || 'f1',
+        hasFinished: false,
         dead: false,
         wasDead: false,
         totalScore: 0,
@@ -289,6 +290,7 @@ wss.on("connection", (ws) => {
         if (justDied) {
           player.coins = 0;
           ws.send(JSON.stringify({ type: "coinUpdate", coins: 0 }));
+          checkAllFinished();
         }
         player.wasDead = data.dead || false;
         player.dead = data.dead || false;
@@ -315,7 +317,9 @@ wss.on("connection", (ws) => {
                 console.log(sessionId, "earned", pts, "points at checkpoint", cpIndex);
 
                 if (cpIndex === CHECKPOINTS.length - 1) {
-                  endRound();
+                  player.hasFinished = true;
+                  ws.send(JSON.stringify({ type: "youFinished" }));
+                  checkAllFinished();
                 }
               }
 
@@ -323,25 +327,27 @@ wss.on("connection", (ws) => {
               const angle = CHECKPOINT_ANGLES[cpIndex];
               let spawnIndex = 0;
 
-              Object.entries(rooms).forEach(([id, p]) => {
-                if (id !== sessionId && (p.dead || p.currentCheckpoint < cpIndex) && spawnIndex < spawns.length) {
-                  const spawn = spawns[spawnIndex];
-                  spawnIndex++;
-                  if (cpIndex >= p.currentCheckpoint) {
-                    p.currentCheckpoint = cpIndex + 1;
-                  }
-                  wss.clients.forEach((client) => {
-                    if (client.sessionId === id && client.readyState === WebSocket.OPEN) {
-                      client.send(JSON.stringify({
-                        type: "respawn",
-                        x: spawn.x,
-                        y: spawn.y,
-                        angle: angle
-                      }));
+              if (cpIndex < CHECKPOINTS.length - 1) {
+                Object.entries(rooms).forEach(([id, p]) => {
+                  if (id !== sessionId && (p.dead || p.currentCheckpoint < cpIndex) && spawnIndex < spawns.length) {
+                    const spawn = spawns[spawnIndex];
+                    spawnIndex++;
+                    if (cpIndex >= p.currentCheckpoint) {
+                      p.currentCheckpoint = cpIndex + 1;
                     }
-                  });
-                }
-              });
+                    wss.clients.forEach((client) => {
+                      if (client.sessionId === id && client.readyState === WebSocket.OPEN) {
+                        client.send(JSON.stringify({
+                          type: "respawn",
+                          x: spawn.x,
+                          y: spawn.y,
+                          angle: angle
+                        }));
+                      }
+                    });
+                  }
+                });
+              }
             }
           }
         }
@@ -481,6 +487,14 @@ wss.on("connection", (ws) => {
   });
 });
 
+function checkAllFinished() {
+  if (!roundActive) return;
+  const anyFinished = Object.values(rooms).some(p => p.hasFinished);
+  if (!anyFinished) return;
+  const aliveNotFinished = Object.values(rooms).filter(p => !p.dead && !p.hasFinished);
+  if (aliveNotFinished.length === 0) endRound();
+}
+
 function broadcastLobby() {
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
@@ -539,6 +553,7 @@ function resetRoundState(startNew) {
     p.dead = false;
     p.wasDead = false;
     p.heldItem = null;
+    p.hasFinished = false;
     const pos = startPositions[p.playerNumber];
     const td = getTrackDistance(pos.x, pos.y, TRACK_PATH, 0);
     p.x = pos.x;

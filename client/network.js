@@ -93,7 +93,12 @@ function connectToServer(playerName) {
       }
     }
 
+    if (data.type === "youFinished") {
+      window.iFinished = true;
+    }
+
     if (data.type === "roundEnd") {
+      window.iFinished = false;
       window.movementLocked = true;
       window.roundEndData = data;
       showScoreboard(data);

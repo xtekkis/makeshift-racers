@@ -198,6 +198,7 @@ function update(time, delta) {
     window.incomingRespawn = null;
     myCoins = 0;
     wrenchTimer = 0;
+    window.iFinished = false;
     updateCoinHUD();
   }
 
@@ -323,48 +324,56 @@ function update(time, delta) {
   }
 
   if (!window.movementLocked) {
-    if (Phaser.Input.Keyboard.JustDown(this.spaceKey) && myHeldItem) {
-      sendUseItem();
-      myHeldItem = null;
-      updateItemHUD();
-    }
-
-    if (wrenchTimer > 0) wrenchTimer -= delta;
-    const baseMax = wrenchTimer > 0 ? MAX_SPEED * 0.3 : MAX_SPEED;
-    const currentMaxSpeed = baseMax * (1 + 0.15 * myCoins);
-    const currentTurnSpeed = Math.max(0.3, turnSpeed - 0.12 * myCoins) * (delta / FRAME_MS);
-
-    if (cursors.left.isDown || this.wasd.left.isDown) {
-      this.playerAngle -= currentTurnSpeed;
-    } else if (cursors.right.isDown || this.wasd.right.isDown) {
-      this.playerAngle += currentTurnSpeed;
-    }
-
-    const goingForward = cursors.up.isDown || this.wasd.up.isDown;
-    const goingBack = cursors.down.isDown || this.wasd.down.isDown;
-
     const dt = delta / FRAME_MS;
-    if (goingForward) {
-      this.playerSpeed += accel * dt;
-    } else if (goingBack) {
-      if (this.playerSpeed > 0) {
-        this.playerSpeed -= DECEL_BRAKE * dt;
-        if (this.playerSpeed < 0) this.playerSpeed = 0;
-      } else {
-        this.playerSpeed -= ACCEL * dt;
-        if (this.playerSpeed < -MAX_REVERSE) this.playerSpeed = -MAX_REVERSE;
+    if (!window.iFinished) {
+      if (Phaser.Input.Keyboard.JustDown(this.spaceKey) && myHeldItem) {
+        sendUseItem();
+        myHeldItem = null;
+        updateItemHUD();
       }
+
+      if (wrenchTimer > 0) wrenchTimer -= delta;
+      const baseMax = wrenchTimer > 0 ? MAX_SPEED * 0.3 : MAX_SPEED;
+      const currentMaxSpeed = baseMax * (1 + 0.15 * myCoins);
+      const currentTurnSpeed = Math.max(0.3, turnSpeed - 0.12 * myCoins) * (delta / FRAME_MS);
+
+      if (cursors.left.isDown || this.wasd.left.isDown) {
+        this.playerAngle -= currentTurnSpeed;
+      } else if (cursors.right.isDown || this.wasd.right.isDown) {
+        this.playerAngle += currentTurnSpeed;
+      }
+
+      const goingForward = cursors.up.isDown || this.wasd.up.isDown;
+      const goingBack = cursors.down.isDown || this.wasd.down.isDown;
+
+      if (goingForward) {
+        this.playerSpeed += accel * dt;
+      } else if (goingBack) {
+        if (this.playerSpeed > 0) {
+          this.playerSpeed -= DECEL_BRAKE * dt;
+          if (this.playerSpeed < 0) this.playerSpeed = 0;
+        } else {
+          this.playerSpeed -= accel * dt;
+          if (this.playerSpeed < -MAX_REVERSE) this.playerSpeed = -MAX_REVERSE;
+        }
+      } else {
+        if (this.playerSpeed > 0) {
+          this.playerSpeed -= DECEL_RELEASE * dt;
+          if (this.playerSpeed < 0) this.playerSpeed = 0;
+        } else if (this.playerSpeed < 0) {
+          this.playerSpeed += DECEL_RELEASE * dt;
+          if (this.playerSpeed > 0) this.playerSpeed = 0;
+        }
+      }
+
+      if (this.playerSpeed > currentMaxSpeed) this.playerSpeed = currentMaxSpeed;
     } else {
+      // Crossed finish — coast to a stop, no input
       if (this.playerSpeed > 0) {
         this.playerSpeed -= DECEL_RELEASE * dt;
         if (this.playerSpeed < 0) this.playerSpeed = 0;
-      } else if (this.playerSpeed < 0) {
-        this.playerSpeed += DECEL_RELEASE * dt;
-        if (this.playerSpeed > 0) this.playerSpeed = 0;
       }
     }
-
-    if (this.playerSpeed > currentMaxSpeed) this.playerSpeed = currentMaxSpeed;
   }
 
   const rad = Phaser.Math.DegToRad(this.playerAngle);
