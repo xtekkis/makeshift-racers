@@ -105,6 +105,7 @@ let expectedPlayers = 0;
 let playersJoined = 0;
 let checkpointArrivalCounts = [0, 0, 0, 0, 0];
 let roundActive = false;
+let finishGraceTimeout = null;
 
 const powerupState = {};
 const lobbySlots = [null, null, null, null];
@@ -492,7 +493,15 @@ function checkAllFinished() {
   const anyFinished = Object.values(rooms).some(p => p.hasFinished);
   if (!anyFinished) return;
   const aliveNotFinished = Object.values(rooms).filter(p => !p.dead && !p.hasFinished);
-  if (aliveNotFinished.length === 0) endRound();
+  if (aliveNotFinished.length === 0) {
+    if (finishGraceTimeout) { clearTimeout(finishGraceTimeout); finishGraceTimeout = null; }
+    endRound();
+  } else if (!finishGraceTimeout) {
+    finishGraceTimeout = setTimeout(() => {
+      finishGraceTimeout = null;
+      if (roundActive) endRound();
+    }, 5000);
+  }
 }
 
 function broadcastLobby() {
@@ -532,6 +541,7 @@ function startCountdown() {
 function endRound() {
   if (!roundActive) return;
   roundActive = false;
+  if (finishGraceTimeout) { clearTimeout(finishGraceTimeout); finishGraceTimeout = null; }
   Object.values(rooms).forEach(p => { p.totalScore += p.roundScore; });
   const winnerEntry = Object.entries(rooms).find(([, p]) => p.totalScore >= 250);
   broadcast({
@@ -542,8 +552,9 @@ function endRound() {
 }
 
 function resetRoundState(startNew) {
+  if (finishGraceTimeout) { clearTimeout(finishGraceTimeout); finishGraceTimeout = null; }
   checkpointArrivalCounts = [0, 0, 0, 0, 0];
-  for (let i = 0; i < 15; i++) powerupState[i] = { collected: false };
+  for (let i = 0; i < 12; i++) powerupState[i] = { collected: false };
   broadcast({ type: "powerupsReset" });
   Object.entries(rooms).forEach(([id, p]) => {
     p.currentCheckpoint = 0;

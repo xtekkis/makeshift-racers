@@ -55,10 +55,19 @@ const FRAME_MS = 1000 / 60;
 const NUM_CAR_VARIANTS = 8;
 
 const VEHICLE_STATS = {
-  f1:    { turnSpeed: 1.0, scaleX: 0.1,  scaleY: 0.1,  accel: 6, angleOffset: -90, collisionRadius: 25 },
-  car:   { turnSpeed: 2.5, scaleX: 0.44, scaleY: 0.32, accel: 6, angleOffset:  90, collisionRadius: 30 },
-  truck: { turnSpeed: 2.5, scaleX: 0.75, scaleY: 0.4,  accel: 3, angleOffset:  90, collisionRadius: 38 },
+  f1:    { turnSpeed: 1.0, scaleX: 0.1,  scaleY: 0.1,  accel: 6, angleOffset: -90, hitL: 15, hitW: 8  },
+  car:   { turnSpeed: 2.5, scaleX: 0.44, scaleY: 0.32, accel: 6, angleOffset:  90, hitL: 25, hitW: 20 },
+  truck: { turnSpeed: 2.5, scaleX: 0.75, scaleY: 0.4,  accel: 3, angleOffset:  90, hitL: 40, hitW: 30 },
 };
+
+function obbOverlap(ax, ay, aAngle, aHitL, aHitW, bx, by, bHitL, bHitW) {
+  const dx = bx - ax;
+  const dy = by - ay;
+  const rad = -aAngle * Math.PI / 180;
+  const localX = dx * Math.cos(rad) - dy * Math.sin(rad);
+  const localY = dx * Math.sin(rad) + dy * Math.cos(rad);
+  return Math.abs(localX) < aHitL + bHitL && Math.abs(localY) < aHitW + bHitW;
+}
 
 function getVehicleTexKey(vType, carIndex, turning) {
   if (vType === 'truck') return 'truck_0';
@@ -141,44 +150,48 @@ function getTargetOffset(direction) {
   }
 }
 
-function checkCollisions(scene, collisionRadius) {
+function checkCollisions(scene) {
   if (!window.lastPlayers) return;
   if (bumpTimer > 0) return;
   if (spawnProtection) return;
 
+  const myStats = VEHICLE_STATS[window.vehicleType || 'f1'];
+
   Object.entries(window.lastPlayers).forEach(([id, p]) => {
     if (p.dead) return;
     if (id === mySessionId) return;
-    const dist = Math.hypot(scene.playerBody.x - p.x, scene.playerBody.y - p.y);
-    if (dist < collisionRadius && dist > 0 && scene.playerSpeed > COLLISION_MIN_SPEED) {
-      const toOther = Math.atan2(p.y - scene.playerBody.y, p.x - scene.playerBody.x);
-      const localRad = Phaser.Math.DegToRad(scene.playerAngle);
-      if (Math.cos(toOther - localRad) > 0) {
-        const angle = Math.atan2(scene.playerBody.y - p.y, scene.playerBody.x - p.x);
-        bumpVx = Math.cos(angle) * BUMP_FORCE;
-        bumpVy = Math.sin(angle) * BUMP_FORCE;
-        bumpTimer = BUMP_DURATION;
-        scene.playerSpeed = 0;
-        sendBump(id, -Math.cos(angle) * BUMP_FORCE, -Math.sin(angle) * BUMP_FORCE);
-      }
+    if (scene.playerSpeed <= COLLISION_MIN_SPEED) return;
+    const theirStats = VEHICLE_STATS[p.vehicleType || 'f1'] || VEHICLE_STATS.f1;
+    if (!obbOverlap(scene.playerBody.x, scene.playerBody.y, scene.playerAngle, myStats.hitL, myStats.hitW,
+                    p.x, p.y, theirStats.hitL, theirStats.hitW)) return;
+    const toOther = Math.atan2(p.y - scene.playerBody.y, p.x - scene.playerBody.x);
+    const localRad = Phaser.Math.DegToRad(scene.playerAngle);
+    if (Math.cos(toOther - localRad) > 0) {
+      const angle = Math.atan2(scene.playerBody.y - p.y, scene.playerBody.x - p.x);
+      bumpVx = Math.cos(angle) * BUMP_FORCE;
+      bumpVy = Math.sin(angle) * BUMP_FORCE;
+      bumpTimer = BUMP_DURATION;
+      scene.playerSpeed = 0;
+      sendBump(id, -Math.cos(angle) * BUMP_FORCE, -Math.sin(angle) * BUMP_FORCE);
     }
   });
 }
 
 function isOverlappingAnyPlayer(scene) {
   if (!window.lastPlayers) return false;
-  const { collisionRadius } = VEHICLE_STATS[window.vehicleType || 'f1'];
+  const myStats = VEHICLE_STATS[window.vehicleType || 'f1'];
   return Object.entries(window.lastPlayers).some(([id, p]) => {
     if (id === mySessionId) return false;
     if (p.dead) return false;
-    const dist = Math.hypot(scene.playerBody.x - p.x, scene.playerBody.y - p.y);
-    return dist < collisionRadius;
+    const theirStats = VEHICLE_STATS[p.vehicleType || 'f1'] || VEHICLE_STATS.f1;
+    return obbOverlap(scene.playerBody.x, scene.playerBody.y, scene.playerAngle, myStats.hitL, myStats.hitW,
+                      p.x, p.y, theirStats.hitL, theirStats.hitW);
   });
 }
 
 function update(time, delta) {
   const vType = window.vehicleType || 'f1';
-  const { turnSpeed, angleOffset, accel, collisionRadius } = VEHICLE_STATS[vType];
+  const { turnSpeed, angleOffset, accel } = VEHICLE_STATS[vType];
 
   if (window.incomingRespawn) {
     const r = window.incomingRespawn;
@@ -397,7 +410,7 @@ function update(time, delta) {
   this.playerLabel.y = this.playerBody.y - 20;
 
   if (!window.movementLocked) {
-    checkCollisions(this, collisionRadius);
+    checkCollisions(this);
     this.powerUps.checkCollection(this.playerBody.x, this.playerBody.y);
   }
 
