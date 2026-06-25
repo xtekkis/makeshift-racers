@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Makeshift Racers</title>
   <style>
     * {
@@ -418,6 +418,78 @@
       font-size: 22px;
       font-weight: bold;
     }
+
+    body.touch-device #coin-hud {
+      bottom: auto;
+      top: 80px;
+    }
+
+    body.touch-device #position-hud {
+      bottom: auto;
+      top: 20px;
+    }
+
+    #dpad-left {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 50;
+      touch-action: none;
+    }
+
+    #dpad-right {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      flex-direction: row;
+      gap: 8px;
+      z-index: 50;
+      touch-action: none;
+    }
+
+    #dpad-steer {
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
+    }
+
+    .dpad-btn {
+      width: 70px;
+      height: 70px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.14);
+      border: 2px solid rgba(255,255,255,0.28);
+      color: white;
+      font-size: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .dpad-btn.pressed {
+      background: rgba(255,255,255,0.36);
+      transform: scale(0.93);
+    }
+
+    #btn-use {
+      width: 148px;
+      height: 50px;
+      font-size: 13px;
+      letter-spacing: 1px;
+      background: rgba(74,143,232,0.55);
+      border-color: rgba(74,143,232,0.85);
+    }
+
+    #btn-use.pressed {
+      background: rgba(74,143,232,0.88);
+    }
   </style>
 </head>
 
@@ -500,6 +572,18 @@
   <div id="position-hud">
     <div class="hud-label">POSITION</div>
     <span id="position-display">—</span>
+  </div>
+
+  <div id="dpad-left">
+    <button class="dpad-btn" id="btn-use">USE</button>
+    <div id="dpad-steer">
+      <button class="dpad-btn" id="btn-left">&#9664;</button>
+      <button class="dpad-btn" id="btn-right">&#9654;</button>
+    </div>
+  </div>
+  <div id="dpad-right">
+    <button class="dpad-btn" id="btn-down">&#9660;</button>
+    <button class="dpad-btn" id="btn-up">&#9650;</button>
   </div>
 
   <div id="scoreboard-overlay">
@@ -595,6 +679,17 @@
       const btn = document.getElementById('readyBtn');
       btn.textContent = isReady ? 'Cancel' : 'Ready';
       btn.classList.toggle('ready', isReady);
+      if (isReady && ('ontouchstart' in window)) {
+        const el = document.documentElement;
+        const reqFs = el.requestFullscreen || el.webkitRequestFullscreen;
+        if (reqFs) {
+          reqFs.call(el).then(() => {
+            if (screen.orientation && screen.orientation.lock) {
+              screen.orientation.lock('landscape').catch(() => {});
+            }
+          }).catch(() => {});
+        }
+      }
       if (window.lobbySocket) {
         window.lobbySocket.send(JSON.stringify({ type: 'lobbyUpdate', color: selectedColor, name, ready: isReady, vehicleType: selectedVehicleType }));
       }
@@ -694,7 +789,7 @@
 
       const scripts = [
         'node_modules/phaser/dist/phaser.min.js',
-        'track.js', 'indicators.js', 'powerups.js', 'scoreboard.js', 'network.js', 'game.js'
+        'track.js', 'indicators.js', 'powerups.js', 'scoreboard.js', 'network.js', 'mobile-controls.js', 'game.js'
       ];
 
       function loadScript(i) {

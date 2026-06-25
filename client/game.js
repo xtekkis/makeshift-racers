@@ -1,7 +1,15 @@
+const _isMobile = ('ontouchstart' in window) || window.matchMedia('(pointer: coarse)').matches;
+const GAME_W = _isMobile ? Math.max(window.screen.width, window.screen.height) : 1280;
+const GAME_H = _isMobile ? Math.min(window.screen.width, window.screen.height) : 720;
+let vpHalfW = GAME_W / 2;
+let vpHalfH = GAME_H / 2;
+let vpW = GAME_W;
+let vpH = GAME_H;
+
 const config = {
   type: Phaser.AUTO,
-  width: 1280,
-  height: 720,
+  width: GAME_W,
+  height: GAME_H,
   backgroundColor: '#1a1a2e',
   physics: {
     default: 'arcade',
@@ -121,7 +129,12 @@ function create() {
   this.playerSpeed = 0;
 
   this.cameras.main.setBounds(0, 0, 6000, 5000);
-  this.cameras.main.setZoom(1);
+  const CAM_ZOOM = _isMobile ? 0.6 : 1;
+  this.cameras.main.setZoom(CAM_ZOOM);
+  vpHalfW = GAME_W / (2 * CAM_ZOOM);
+  vpHalfH = GAME_H / (2 * CAM_ZOOM);
+  vpW = GAME_W / CAM_ZOOM;
+  vpH = GAME_H / CAM_ZOOM;
   this.physics.world.setBounds(0, 0, 6000, 5000);
 
   window.gameScene = this;
@@ -252,8 +265,8 @@ function update(time, delta) {
     const target = getTargetOffset(direction);
     camOffsetX += (target.x - camOffsetX) * CAM_LERP;
     camOffsetY += (target.y - camOffsetY) * CAM_LERP;
-    const scrollX = Math.max(0, Math.min(leaderX - 640 + camOffsetX, 6000 - 1280));
-    const scrollY = Math.max(0, Math.min(leaderY - 360 + camOffsetY, 5000 - 720));
+    const scrollX = Math.max(0, Math.min(leaderX - vpHalfW + camOffsetX, 6000 - vpW));
+    const scrollY = Math.max(0, Math.min(leaderY - vpHalfH + camOffsetY, 5000 - vpH));
     this.cameras.main.setScroll(scrollX, scrollY);
 
     if (window.lastPlayers) {
@@ -286,8 +299,8 @@ function update(time, delta) {
     const target = getTargetOffset(direction);
     camOffsetX += (target.x - camOffsetX) * CAM_LERP;
     camOffsetY += (target.y - camOffsetY) * CAM_LERP;
-    const scrollX = Math.max(0, Math.min(leaderX - 640 + camOffsetX, 6000 - 1280));
-    const scrollY = Math.max(0, Math.min(leaderY - 360 + camOffsetY, 5000 - 720));
+    const scrollX = Math.max(0, Math.min(leaderX - vpHalfW + camOffsetX, 6000 - vpW));
+    const scrollY = Math.max(0, Math.min(leaderY - vpHalfH + camOffsetY, 5000 - vpH));
     this.cameras.main.setScroll(scrollX, scrollY);
 
     if (window.playerPositioned) sendMove(this.playerBody.x, this.playerBody.y, this.playerAngle, false);
@@ -312,15 +325,15 @@ function update(time, delta) {
   camOffsetX += (target.x - camOffsetX) * 0.05;
   camOffsetY += (target.y - camOffsetY) * 0.05;
 
-  const scrollX = Math.max(0, Math.min(leaderX - 640 + camOffsetX, 6000 - 1280));
-  const scrollY = Math.max(0, Math.min(leaderY - 360 + camOffsetY, 5000 - 720));
+  const scrollX = Math.max(0, Math.min(leaderX - vpHalfW + camOffsetX, 6000 - vpW));
+  const scrollY = Math.max(0, Math.min(leaderY - vpHalfH + camOffsetY, 5000 - vpH));
   this.cameras.main.setScroll(scrollX, scrollY);
 
   const isOutOfView =
     this.playerBody.x < scrollX - margin ||
-    this.playerBody.x > scrollX + 1280 + margin ||
+    this.playerBody.x > scrollX + vpW + margin ||
     this.playerBody.y < scrollY - margin ||
-    this.playerBody.y > scrollY + 720 + margin;
+    this.playerBody.y > scrollY + vpH + margin;
 
   if (isOutOfView && !spawnProtection) {
     outOfBoundsTimer += delta;
@@ -339,7 +352,9 @@ function update(time, delta) {
   if (!window.movementLocked) {
     const dt = delta / FRAME_MS;
     if (!window.iFinished) {
-      if (Phaser.Input.Keyboard.JustDown(this.spaceKey) && myHeldItem) {
+      const useItemPressed = Phaser.Input.Keyboard.JustDown(this.spaceKey) || window.mobileItemPressed;
+      window.mobileItemPressed = false;
+      if (useItemPressed && myHeldItem) {
         sendUseItem();
         myHeldItem = null;
         updateItemHUD();
@@ -350,14 +365,17 @@ function update(time, delta) {
       const currentMaxSpeed = baseMax * (1 + 0.15 * myCoins);
       const currentTurnSpeed = Math.max(0.3, turnSpeed - 0.12 * myCoins) * (delta / FRAME_MS);
 
-      if (cursors.left.isDown || this.wasd.left.isDown) {
+      const dpad = window.dpad || { left: false, right: false, up: false, down: false };
+      const goingLeft = cursors.left.isDown || this.wasd.left.isDown || dpad.left;
+      const goingRight = cursors.right.isDown || this.wasd.right.isDown || dpad.right;
+      const goingForward = cursors.up.isDown || this.wasd.up.isDown || dpad.up;
+      const goingBack = cursors.down.isDown || this.wasd.down.isDown || dpad.down;
+
+      if (goingLeft) {
         this.playerAngle -= currentTurnSpeed;
-      } else if (cursors.right.isDown || this.wasd.right.isDown) {
+      } else if (goingRight) {
         this.playerAngle += currentTurnSpeed;
       }
-
-      const goingForward = cursors.up.isDown || this.wasd.up.isDown;
-      const goingBack = cursors.down.isDown || this.wasd.down.isDown;
 
       if (goingForward) {
         this.playerSpeed += accel * dt;
@@ -400,8 +418,9 @@ function update(time, delta) {
   player.y = this.playerBody.y;
   let turning = '';
   if (vType === 'f1' && !window.movementLocked) {
-    if (cursors.left.isDown || this.wasd.left.isDown) turning = '_left';
-    else if (cursors.right.isDown || this.wasd.right.isDown) turning = '_right';
+    const _dpad = window.dpad || { left: false, right: false };
+    if (cursors.left.isDown || this.wasd.left.isDown || _dpad.left) turning = '_left';
+    else if (cursors.right.isDown || this.wasd.right.isDown || _dpad.right) turning = '_right';
   }
   player.setTexture(getVehicleTexKey(vType, this.carIndex, turning));
   player.setAngle(this.playerAngle + angleOffset);
