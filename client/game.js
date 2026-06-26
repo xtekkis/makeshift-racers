@@ -63,9 +63,9 @@ const FRAME_MS = 1000 / 60;
 const NUM_CAR_VARIANTS = 8;
 
 const VEHICLE_STATS = {
-  f1:    { turnSpeed: 1.0, scaleX: 0.1,  scaleY: 0.1,  accel: 6, angleOffset: -90, hitL: 15, hitW: 8  },
-  car:   { turnSpeed: 2.5, scaleX: 0.44, scaleY: 0.32, accel: 6, angleOffset:  90, hitL: 25, hitW: 20 },
-  truck: { turnSpeed: 2.5, scaleX: 0.75, scaleY: 0.4,  accel: 3, angleOffset:  90, hitL: 40, hitW: 30 },
+  f1:    { turnSpeed: 3.0, scaleX: 0.1,  scaleY: 0.1,  accel: 6, angleOffset: -90, hitL: 15, hitW: 8,  maxSpeed: 450, wrenchMult: 0.30, bumpResist: 1.0 },
+  car:   { turnSpeed: 2.0, scaleX: 0.44, scaleY: 0.32, accel: 7, angleOffset:  90, hitL: 25, hitW: 20, maxSpeed: 400, wrenchMult: 0.30, bumpResist: 1.0 },
+  truck: { turnSpeed: 2.0, scaleX: 0.75, scaleY: 0.4,  accel: 3, angleOffset:  90, hitL: 40, hitW: 30, maxSpeed: 360, wrenchMult: 0.50, bumpResist: 0.4 },
 };
 
 function obbOverlap(ax, ay, aAngle, aHitL, aHitW, bx, by, bHitL, bHitW) {
@@ -181,8 +181,8 @@ function checkCollisions(scene) {
     const localRad = Phaser.Math.DegToRad(scene.playerAngle);
     if (Math.cos(toOther - localRad) > 0) {
       const angle = Math.atan2(scene.playerBody.y - p.y, scene.playerBody.x - p.x);
-      bumpVx = Math.cos(angle) * BUMP_FORCE;
-      bumpVy = Math.sin(angle) * BUMP_FORCE;
+      bumpVx = Math.cos(angle) * BUMP_FORCE * myStats.bumpResist;
+      bumpVy = Math.sin(angle) * BUMP_FORCE * myStats.bumpResist;
       bumpTimer = BUMP_DURATION;
       scene.playerSpeed = 0;
       sendBump(id, -Math.cos(angle) * BUMP_FORCE, -Math.sin(angle) * BUMP_FORCE);
@@ -229,8 +229,9 @@ function update(time, delta) {
   }
 
   if (window.incomingBump && !spawnProtection) {
-    bumpVx = window.incomingBump.vx;
-    bumpVy = window.incomingBump.vy;
+    const { bumpResist } = VEHICLE_STATS[vType];
+    bumpVx = window.incomingBump.vx * bumpResist;
+    bumpVy = window.incomingBump.vy * bumpResist;
     bumpTimer = BUMP_DURATION;
     this.playerSpeed = 0;
     window.incomingBump = null;
@@ -359,7 +360,8 @@ function update(time, delta) {
       }
 
       if (wrenchTimer > 0) wrenchTimer -= delta;
-      const baseMax = wrenchTimer > 0 ? MAX_SPEED * 0.3 : MAX_SPEED;
+      const { maxSpeed: vehicleMaxSpeed, wrenchMult } = VEHICLE_STATS[vType];
+      const baseMax = wrenchTimer > 0 ? vehicleMaxSpeed * wrenchMult : vehicleMaxSpeed;
       const currentMaxSpeed = baseMax * (1 + 0.15 * myCoins);
       const currentTurnSpeed = Math.max(0.3, turnSpeed - 0.12 * myCoins) * (delta / FRAME_MS);
 
