@@ -307,14 +307,12 @@ function update(time, delta) {
     return;
   }
 
-  if (!spawnProtection) {
-    if (this.track.isOffTrack(this.playerBody.x, this.playerBody.y)) {
-      isDead = true;
-      deathTimer = DEATH_DURATION;
-      this.playerSpeed = 0;
-      player.setAlpha(0.3);
-      console.log("Player died!");
-    }
+  if (this.track.isOffTrack(this.playerBody.x, this.playerBody.y)) {
+    isDead = true;
+    deathTimer = DEATH_DURATION;
+    this.playerSpeed = 0;
+    player.setAlpha(0.3);
+    console.log("Player died!");
   }
 
   const leaderX = window.iAmLeader ? this.playerBody.x : (window.leaderX || this.playerBody.x);
