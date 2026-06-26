@@ -40,7 +40,7 @@ function showScoreboard(data) {
     const barOuter = document.createElement('div');
     barOuter.className = 'score-bar-outer';
 
-    const prevHeight = Math.min((p.totalScore - p.roundScore) / 250, 1) * 240;
+    const prevHeight = Math.min((p.totalScore - p.roundScore) / 250, 1) * (window.scorebarMaxHeight || 240);
 
     const bar = document.createElement('div');
     bar.className = 'score-bar score-bar-round';
@@ -98,7 +98,7 @@ function showScoreboard(data) {
       const roundPts = displayedScores[p.playerNumber];
       const prevPts = p.totalScore - p.roundScore;
       const totalDisplayed = prevPts + roundPts;
-      const heightPx = Math.min(totalDisplayed / 250, 1) * 240;
+      const heightPx = Math.min(totalDisplayed / 250, 1) * (window.scorebarMaxHeight || 240);
       bars[p.playerNumber].style.height = heightPx + 'px';
       const totalEl = document.getElementById('score-total-' + p.playerNumber);
       if (totalEl) totalEl.textContent = 'Total: ' + totalDisplayed + ' pts';

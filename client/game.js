@@ -157,8 +157,8 @@ function getTargetOffset(direction) {
   switch (direction) {
     case 'left': return { x: 180, y: 0 };
     case 'right': return { x: -180, y: 0 };
-    case 'up': return { x: 0, y: 80 };
-    case 'down': return { x: 0, y: -80 };
+    case 'up': return { x: 0, y: -120 };
+    case 'down': return { x: 0, y: 120 };
     default: return { x: 180, y: 0 };
   }
 }

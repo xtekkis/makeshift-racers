@@ -11,6 +11,7 @@
 
   window.dpad = { left: false, right: false, up: false, down: false };
   window.mobileItemPressed = false;
+  window.scorebarMaxHeight = 110;
 
   function setupBtn(el, onDown, onUp) {
     if (!el) return;
