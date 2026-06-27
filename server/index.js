@@ -500,7 +500,7 @@ function checkAllFinished() {
     finishGraceTimeout = setTimeout(() => {
       finishGraceTimeout = null;
       if (roundActive) endRound();
-    }, 5000);
+    }, 1000);
   }
 }
 

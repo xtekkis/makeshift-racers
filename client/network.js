@@ -98,7 +98,7 @@ function connectToServer(playerName) {
     }
 
     if (data.type === "roundEnd") {
-      window.iFinished = false;
+      window.iFinished = true;
       window.movementLocked = true;
       window.roundEndData = data;
       showScoreboard(data);

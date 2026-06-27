@@ -398,12 +398,14 @@ function update(time, delta) {
       }
 
       if (this.playerSpeed > currentMaxSpeed) this.playerSpeed = currentMaxSpeed;
-    } else {
-      // Crossed finish — coast to a stop, no input
-      if (this.playerSpeed > 0) {
-        this.playerSpeed -= DECEL_RELEASE * dt;
-        if (this.playerSpeed < 0) this.playerSpeed = 0;
-      }
+    }
+  }
+
+  if (window.iFinished) {
+    const dt = delta / FRAME_MS;
+    if (this.playerSpeed > 0) {
+      this.playerSpeed -= DECEL_RELEASE * dt;
+      if (this.playerSpeed < 0) this.playerSpeed = 0;
     }
   }
 
