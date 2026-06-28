@@ -528,6 +528,7 @@ function updateItemHUD() {
     if (myHeldItem === 'coin') el.textContent = 'COIN';
     else if (myHeldItem === 'wrench') el.textContent = 'WRENCH';
     else if (myHeldItem === 'shield') el.textContent = 'SHIELD';
+    else if (myHeldItem === 'hammer') el.textContent = 'HAMMER';
     else el.textContent = '';
   }
 }

@@ -421,7 +421,7 @@ wss.on("connection", (ws) => {
             return b.trackDistance - a.trackDistance;
           });
           const rank = sorted.findIndex(([id]) => id === sessionId) + 1;
-          const item = rank === 1 ? 'coin' : rank === 2 ? 'shield' : 'wrench';
+          const item = rank === 1 ? 'coin' : rank === 2 ? 'shield' : rank === 3 ? 'wrench' : 'hammer';
           p.heldItem = item;
           ws.send(JSON.stringify({ type: "itemAssigned", item }));
         }
@@ -441,14 +441,15 @@ wss.on("connection", (ws) => {
         ws.send(JSON.stringify({ type: "coinUpdate", coins: p.coins }));
       }
 
-      if (item === 'wrench') {
+      if (item === 'wrench' || item === 'hammer') {
         const sorted = Object.entries(rooms).sort(([, a], [, b]) => {
           if (b.currentCheckpoint !== a.currentCheckpoint) return b.currentCheckpoint - a.currentCheckpoint;
           return b.trackDistance - a.trackDistance;
         });
         const myRank = sorted.findIndex(([id]) => id === sessionId);
-        if (myRank > 0) {
-          const [targetId] = sorted[myRank - 1];
+        const hitCount = item === 'hammer' ? 2 : 1;
+        const targets = sorted.slice(Math.max(0, myRank - hitCount), myRank).map(([id]) => id);
+        targets.forEach(targetId => {
           const targetRoom = rooms[targetId];
           wss.clients.forEach(client => {
             if (client.sessionId === targetId && client.readyState === WebSocket.OPEN) {
@@ -461,7 +462,7 @@ wss.on("connection", (ws) => {
               }
             }
           });
-        }
+        });
       }
     }
     
