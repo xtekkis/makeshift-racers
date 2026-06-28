@@ -63,8 +63,8 @@ const FRAME_MS = 1000 / 60;
 const NUM_CAR_VARIANTS = 8;
 
 const VEHICLE_STATS = {
-  f1:    { turnSpeed: 2.2, scaleX: 0.1,  scaleY: 0.1,  accel: 6, angleOffset: -90, hitL: 15, hitW: 8,  maxSpeed: 450, wrenchMult: 0.30, bumpResist: 1.0 },
-  car:   { turnSpeed: 1.8, scaleX: 0.44, scaleY: 0.32, accel: 7, angleOffset:  90, hitL: 25, hitW: 20, maxSpeed: 400, wrenchMult: 0.30, bumpResist: 1.0 },
+  f1:    { turnSpeed: 2.2, scaleX: 0.1,  scaleY: 0.1,  accel: 6, angleOffset: -90, hitL: 12, hitW: 10, maxSpeed: 450, wrenchMult: 0.30, bumpResist: 1.0 },
+  car:   { turnSpeed: 1.8, scaleX: 0.44, scaleY: 0.32, accel: 7, angleOffset:  90, hitL: 28, hitW: 18, maxSpeed: 400, wrenchMult: 0.30, bumpResist: 1.0 },
   truck: { turnSpeed: 2.0, scaleX: 0.75, scaleY: 0.4,  accel: 5, angleOffset:  90, hitL: 40, hitW: 30, maxSpeed: 400, wrenchMult: 0.50, bumpResist: 0.4 },
 };
 
