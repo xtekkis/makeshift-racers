@@ -421,7 +421,7 @@ wss.on("connection", (ws) => {
             return b.trackDistance - a.trackDistance;
           });
           const rank = sorted.findIndex(([id]) => id === sessionId) + 1;
-          const item = rank === 1 ? 'coin' : 'wrench';
+          const item = rank === 1 ? 'coin' : rank === 2 ? 'shield' : 'wrench';
           p.heldItem = item;
           ws.send(JSON.stringify({ type: "itemAssigned", item }));
         }
@@ -432,6 +432,8 @@ wss.on("connection", (ws) => {
       const p = rooms[sessionId];
       if (!p || !p.heldItem) return;
       const item = p.heldItem;
+
+      if (item === 'shield') return;
       p.heldItem = null;
 
       if (item === 'coin') {
@@ -447,9 +449,16 @@ wss.on("connection", (ws) => {
         const myRank = sorted.findIndex(([id]) => id === sessionId);
         if (myRank > 0) {
           const [targetId] = sorted[myRank - 1];
+          const targetRoom = rooms[targetId];
           wss.clients.forEach(client => {
             if (client.sessionId === targetId && client.readyState === WebSocket.OPEN) {
-              client.send(JSON.stringify({ type: "wrenchHit" }));
+              if (targetRoom && targetRoom.heldItem === 'shield') {
+                targetRoom.heldItem = null;
+                client.send(JSON.stringify({ type: 'shieldBroken' }));
+                client.send(JSON.stringify({ type: 'itemAssigned', item: null }));
+              } else {
+                client.send(JSON.stringify({ type: 'wrenchHit' }));
+              }
             }
           });
         }

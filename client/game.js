@@ -353,7 +353,7 @@ function update(time, delta) {
     if (!window.iFinished) {
       const useItemPressed = Phaser.Input.Keyboard.JustDown(this.spaceKey) || window.mobileItemPressed;
       window.mobileItemPressed = false;
-      if (useItemPressed && myHeldItem) {
+      if (useItemPressed && myHeldItem && myHeldItem !== 'shield') {
         sendUseItem();
         myHeldItem = null;
         updateItemHUD();
@@ -527,6 +527,7 @@ function updateItemHUD() {
   if (el) {
     if (myHeldItem === 'coin') el.textContent = 'COIN';
     else if (myHeldItem === 'wrench') el.textContent = 'WRENCH';
+    else if (myHeldItem === 'shield') el.textContent = 'SHIELD';
     else el.textContent = '';
   }
 }

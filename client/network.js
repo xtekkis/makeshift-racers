@@ -121,6 +121,7 @@ function connectToServer(playerName) {
     if (data.type === "itemAssigned") { if (window.setHeldItem) window.setHeldItem(data.item); }
     if (data.type === "coinUpdate") { if (window.setCoins) window.setCoins(data.coins); }
     if (data.type === "wrenchHit") { window.incomingWrench = true; }
+    if (data.type === "shieldBroken") { if (window.setHeldItem) window.setHeldItem(null); }
     if (data.type === "powerupCollected") {
       if (window.gameScene && window.gameScene.powerUps) {
         window.gameScene.powerUps.removeById(data.id);
