@@ -421,7 +421,15 @@ wss.on("connection", (ws) => {
             return b.trackDistance - a.trackDistance;
           });
           const rank = sorted.findIndex(([id]) => id === sessionId) + 1;
-          const item = rank === 1 ? 'coin' : rank === 2 ? 'shield' : rank === 3 ? 'wrench' : 'hammer';
+          const pools = [
+            [['coin', 1]],
+            [['shield', 0.6], ['wrench', 0.4]],
+            [['wrench', 0.6], ['shield', 0.2], ['hammer', 0.2]],
+            [['hammer', 0.6], ['wrench', 0.3], ['shield', 0.1]],
+          ];
+          const pool = pools[Math.min(rank - 1, pools.length - 1)];
+          let r = Math.random() * pool.reduce((s, [, w]) => s + w, 0);
+          const item = pool.find(([, w]) => (r -= w) <= 0)?.[0] ?? pool[pool.length - 1][0];
           p.heldItem = item;
           ws.send(JSON.stringify({ type: "itemAssigned", item }));
         }
