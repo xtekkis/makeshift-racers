@@ -106,6 +106,10 @@ let playersJoined = 0;
 let checkpointArrivalCounts = [0, 0, 0, 0, 0];
 let roundActive = false;
 let finishGraceTimeout = null;
+let roundNumber = 0;
+let placementPhase = false;
+let placementTimer = null;
+const obstacles = [];
 
 const powerupState = {};
 const lobbySlots = [null, null, null, null];
@@ -249,6 +253,7 @@ wss.on("connection", (ws) => {
         readyForNext: false,
         heldItem: null,
         coins: 0,
+        placementReady: false,
       };
       console.log(sessionId, "joined as", rooms[sessionId].name);
       ws.send(JSON.stringify({ type: "playerNumber", number: playerNumber }));
@@ -474,6 +479,18 @@ wss.on("connection", (ws) => {
       }
     }
     
+    if (data.type === "placeObstacle") {
+      if (!placementPhase) return;
+      const p = rooms[sessionId];
+      if (!p || p.placementReady) return;
+      const obstacle = { type: data.obstacleType, x: data.x, y: data.y, rotation: data.rotation || 0, placedBy: sessionId };
+      obstacles.push(obstacle);
+      p.placementReady = true;
+      broadcast({ type: "obstaclePlaced", obstacle });
+      const allReady = Object.values(rooms).every(r => r.placementReady);
+      if (allReady) endPlacementPhase();
+    }
+
     if (data.type === "bump") {
       wss.clients.forEach((client) => {
         if (client.sessionId === data.target && client.readyState === WebSocket.OPEN) {
@@ -492,11 +509,19 @@ wss.on("connection", (ws) => {
       broadcastLobby();
     }
     delete rooms[sessionId];
+    if (placementPhase && Object.keys(rooms).length > 0) {
+      const allReady = Object.values(rooms).every(p => p.placementReady);
+      if (allReady) endPlacementPhase();
+    }
     if (Object.keys(rooms).length === 0) {
       cameraX = 0;
       playerCount = 0;
       checkpointArrivalCounts = [0, 0, 0, 0, 0];
       roundActive = false;
+      roundNumber = 0;
+      placementPhase = false;
+      if (placementTimer) { clearTimeout(placementTimer); placementTimer = null; }
+      obstacles.length = 0;
       for (let i = 0; i < 15; i++) {
         powerupState[i] = { collected: false };
       }
@@ -534,6 +559,8 @@ function startGame() {
   playerCount = 0;
   expectedPlayers = lobbySlots.filter(s => s !== null).length;
   playersJoined = 0;
+  roundNumber = 0;
+  obstacles.length = 0;
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(JSON.stringify({ type: "gameStart" }));
@@ -559,6 +586,7 @@ function startCountdown() {
 function endRound() {
   if (!roundActive) return;
   roundActive = false;
+  roundNumber++;
   if (finishGraceTimeout) { clearTimeout(finishGraceTimeout); finishGraceTimeout = null; }
   Object.values(rooms).forEach(p => { p.totalScore += p.roundScore; });
   const winnerEntry = Object.entries(rooms).find(([, p]) => p.totalScore >= 250);
@@ -595,7 +623,28 @@ function resetRoundState(startNew) {
       }
     });
   });
-  if (startNew) startCountdown();
+  if (startNew) {
+    if (roundNumber >= 1) {
+      startPlacementPhase();
+    } else {
+      startCountdown();
+    }
+  }
+}
+
+function startPlacementPhase() {
+  placementPhase = true;
+  Object.values(rooms).forEach(p => { p.placementReady = false; });
+  broadcast({ type: "placementStart", obstacles, timeLimit: 15 });
+  placementTimer = setTimeout(endPlacementPhase, 15000);
+}
+
+function endPlacementPhase() {
+  if (!placementPhase) return;
+  placementPhase = false;
+  if (placementTimer) { clearTimeout(placementTimer); placementTimer = null; }
+  broadcast({ type: "placementEnd", obstacles });
+  startCountdown();
 }
 
 function broadcast(data) {
