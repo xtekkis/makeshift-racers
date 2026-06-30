@@ -578,7 +578,7 @@ window.enterPlacementPhase = function(timeLimit, menuItems) {
     const pZoom = Math.min(GAME_W / 3200, GAME_H / 2400);
     scene.cameras.main.setZoom(pZoom);
     const scrollX = Math.max(0, 2000 - GAME_W / (2 * pZoom));
-    const scrollY = Math.max(0, 2600 - GAME_H / (2 * pZoom));
+    const scrollY = Math.max(0, 2800 - GAME_H / (2 * pZoom));
     scene.cameras.main.setScroll(scrollX, scrollY);
 
     scene._obstaclePlaced = false;
@@ -587,21 +587,24 @@ window.enterPlacementPhase = function(timeLimit, menuItems) {
     scene._ghostSprite = null;
     scene._hasConfirmed = false;
 
-    scene._onPlacementMove = (ptr) => {
-      if (scene._ghostSprite && !scene._obstaclePlaced) {
-        const wp = scene.cameras.main.getWorldPoint(ptr.x, ptr.y);
-        scene._ghostSprite.setPosition(wp.x, wp.y);
-      }
+    scene._domPointerMove = (e) => {
+      if (!scene._ghostSprite || scene._obstaclePlaced) return;
+      const cx = e.clientX !== undefined ? e.clientX : (e.touches ? e.touches[0].clientX : null);
+      const cy = e.clientY !== undefined ? e.clientY : (e.touches ? e.touches[0].clientY : null);
+      if (cx === null) return;
+      const wp = scene.cameras.main.getWorldPoint(cx, cy);
+      scene._ghostSprite.setPosition(wp.x, wp.y);
     };
-    scene._onPlacementDown = () => {
+    scene._domPointerUp = (e) => {
       if (!scene._selectedObstacleType || scene._obstaclePlaced || !scene._ghostSprite) return;
+      if (e.target && e.target.closest && e.target.closest('#placement-menu')) return;
       scene._obstaclePlaced = true;
       scene._ghostSprite.setAlpha(0.9);
       document.getElementById('placement-menu').style.display = 'none';
       document.getElementById('obstacle-controls').style.display = 'flex';
     };
-    scene.input.on('pointermove', scene._onPlacementMove);
-    scene.input.on('pointerdown', scene._onPlacementDown);
+    document.addEventListener('pointermove', scene._domPointerMove);
+    document.addEventListener('pointerup', scene._domPointerUp);
 
     scene._rotateKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
   }
@@ -622,7 +625,7 @@ window.enterPlacementPhase = function(timeLimit, menuItems) {
       img.src = 'assets/obstacles/' + type + '.png';
       img.alt = type;
       item.appendChild(img);
-      item.addEventListener('click', () => { if (window.selectObstacle) window.selectObstacle(type); });
+      item.addEventListener('pointerdown', (e) => { e.preventDefault(); if (window.selectObstacle) window.selectObstacle(type); });
       menuEl.appendChild(item);
     });
     menuEl.style.display = 'flex';
@@ -667,10 +670,10 @@ window.exitPlacementPhase = function() {
     vpW = GAME_W / normalZoom;
     vpH = GAME_H / normalZoom;
 
-    if (scene._onPlacementMove) scene.input.off('pointermove', scene._onPlacementMove);
-    if (scene._onPlacementDown) scene.input.off('pointerdown', scene._onPlacementDown);
-    scene._onPlacementMove = null;
-    scene._onPlacementDown = null;
+    if (scene._domPointerMove) document.removeEventListener('pointermove', scene._domPointerMove);
+    if (scene._domPointerUp) document.removeEventListener('pointerup', scene._domPointerUp);
+    scene._domPointerMove = null;
+    scene._domPointerUp = null;
 
     if (scene._ghostSprite) { scene._ghostSprite.destroy(); scene._ghostSprite = null; }
     if (scene._rotateKey) {
