@@ -63,12 +63,12 @@ const CAM_LERP = 0.05;
 const FRAME_MS = 1000 / 60;
 const NUM_CAR_VARIANTS = 8;
 
-const ALL_OBSTACLE_TYPES = ['barrel_red', 'barrier_red', 'barrier_white', 'cone-straight', 'rock_small', 'rock_medium', 'rock_large', 'bush_large', 'bush_small'];
+const ALL_OBSTACLE_TYPES = ['barrel_red', 'barrier_red', 'barrier_white', 'cone', 'rock_small', 'rock_medium', 'rock_large', 'bush_large', 'bush_small'];
 const OBSTACLE_SCALES = {
   'barrel_red':    0.35,
   'barrier_red':   0.5,
   'barrier_white': 0.5,
-  'cone-straight': 0.3,
+  'cone': 0.3,
   'rock_small':    0.4,
   'rock_medium':   0.5,
   'rock_large':    0.6,
@@ -575,11 +575,12 @@ window.enterPlacementPhase = function(timeLimit, menuItems) {
     Object.values(scene.otherPlayers).forEach(s => s.setVisible(false));
     if (scene.otherPlayerLabels) Object.values(scene.otherPlayerLabels).forEach(l => l.setVisible(false));
 
-    const pZoom = Math.min(GAME_W / 3200, GAME_H / 2600);
+    const pZoom = Math.min(GAME_W / 3400, GAME_H / 2500);
+    const pScrollX = 2000 - GAME_W / 2;
+    const pScrollY = 2600 - GAME_H / 2;
     scene.cameras.main.setZoom(pZoom);
-    const scrollX = Math.max(0, 2000 - GAME_W / (2 * pZoom));
-    const scrollY = Math.max(0, 3000 - GAME_H / (2 * pZoom));
-    scene.cameras.main.setScroll(scrollX, scrollY);
+    scene.cameras.main.setScroll(pScrollX, pScrollY);
+    scene.time.delayedCall(0, () => { scene.cameras.main.setScroll(pScrollX, pScrollY); });
 
     scene._obstaclePlaced = false;
     scene._selectedObstacleType = null;
@@ -588,7 +589,7 @@ window.enterPlacementPhase = function(timeLimit, menuItems) {
     scene._hasConfirmed = false;
 
     scene._domPointerMove = (e) => {
-      if (!scene._ghostSprite) return;
+      if (!scene._ghostSprite || scene._obstaclePlaced) return;
       const canvas = scene.game.canvas;
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect.width;
@@ -601,7 +602,18 @@ window.enterPlacementPhase = function(timeLimit, menuItems) {
       const wp = scene.cameras.main.getWorldPoint(canvasX, canvasY);
       scene._ghostSprite.setPosition(wp.x, wp.y);
     };
+    scene._domPointerUp = (e) => {
+      if (!scene._selectedObstacleType || scene._obstaclePlaced || !scene._ghostSprite) return;
+      const menuEl = document.getElementById('placement-menu');
+      if (menuEl) {
+        const r = menuEl.getBoundingClientRect();
+        if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) return;
+      }
+      scene._obstaclePlaced = true;
+      document.getElementById('obstacle-controls').style.display = 'flex';
+    };
     document.addEventListener('pointermove', scene._domPointerMove);
+    document.addEventListener('pointerup', scene._domPointerUp);
 
     scene._rotateKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
   }
@@ -668,7 +680,9 @@ window.exitPlacementPhase = function() {
     vpH = GAME_H / normalZoom;
 
     if (scene._domPointerMove) document.removeEventListener('pointermove', scene._domPointerMove);
+    if (scene._domPointerUp) document.removeEventListener('pointerup', scene._domPointerUp);
     scene._domPointerMove = null;
+    scene._domPointerUp = null;
 
     if (scene._ghostSprite) { scene._ghostSprite.destroy(); scene._ghostSprite = null; }
     if (scene._rotateKey) {
@@ -681,8 +695,15 @@ window.exitPlacementPhase = function() {
     scene._hasConfirmed = false;
   }
 
+  document.querySelectorAll('.obstacle-item.used').forEach(el => el.classList.remove('used'));
+
   if (player) player.setVisible(true);
   if (scene) scene.playerLabel.setVisible(true);
+};
+
+window.markObstacleUsed = function(type) {
+  const el = document.querySelector(`.obstacle-item[data-type="${type}"]`);
+  if (el) el.classList.add('used');
 };
 
 window.selectObstacle = function(type) {
@@ -697,6 +718,7 @@ window.selectObstacle = function(type) {
 
   scene._selectedObstacleType = type;
   scene._obstacleRotation = 0;
+  scene._obstaclePlaced = false;
 
   const ptr = scene.input.activePointer;
   const wp = scene.cameras.main.getWorldPoint(ptr.x || GAME_W / 2, ptr.y || GAME_H / 2);
@@ -706,7 +728,7 @@ window.selectObstacle = function(type) {
   scene._ghostSprite.setDepth(3);
   scene._ghostSprite.setAngle(0);
 
-  document.getElementById('obstacle-controls').style.display = 'flex';
+  document.getElementById('obstacle-controls').style.display = 'none';
 };
 
 window.rotatePlacementGhost = function() {
@@ -718,7 +740,7 @@ window.rotatePlacementGhost = function() {
 
 window.confirmObstaclePlacement = function() {
   const scene = window.gameScene;
-  if (!scene || !scene._ghostSprite || !scene._selectedObstacleType || scene._hasConfirmed) return;
+  if (!scene || !scene._ghostSprite || !scene._obstaclePlaced || scene._hasConfirmed) return;
   scene._hasConfirmed = true;
   sendPlaceObstacle(scene._selectedObstacleType, scene._ghostSprite.x, scene._ghostSprite.y, scene._obstacleRotation);
   if (placementTimerInterval) { clearInterval(placementTimerInterval); placementTimerInterval = null; }

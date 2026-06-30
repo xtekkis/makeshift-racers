@@ -118,6 +118,10 @@ function connectToServer(playerName) {
       if (window.exitPlacementPhase) window.exitPlacementPhase();
     }
 
+    if (data.type === "obstaclePlaced") {
+      if (window.markObstacleUsed) window.markObstacleUsed(data.obstacle.type);
+    }
+
     if (data.type === "powerupsReset") {
       if (window.gameScene && window.gameScene.powerUps) {
         window.gameScene.powerUps.reset();
