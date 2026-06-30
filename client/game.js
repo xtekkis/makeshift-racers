@@ -48,6 +48,7 @@ const SPAWN_PROTECTION_DURATION = 5000;
 
 let myCoins = 0;
 let myHeldItem = null;
+let placementTimerInterval = null;
 let wrenchTimer = 0;
 const WRENCH_DURATION = 3000;
 
@@ -138,6 +139,7 @@ function create() {
   this.physics.world.setBounds(0, 0, 6000, 5000);
 
   window.gameScene = this;
+  window.inPlacementPhase = false;
   this.otherPlayers = {};
 
   ['item-hud', 'coin-hud', 'position-hud'].forEach(id => {
@@ -203,6 +205,7 @@ function isOverlappingAnyPlayer(scene) {
 }
 
 function update(time, delta) {
+  if (window.inPlacementPhase) return;
   const vType = window.vehicleType || 'f1';
   const { turnSpeed, angleOffset, accel } = VEHICLE_STATS[vType];
 
@@ -455,6 +458,7 @@ function updatePlayers(players, myId) {
   const scene = window.gameScene;
 
   if (!scene) return;
+  if (window.inPlacementPhase) return;
 
   Object.keys(players).forEach((id) => {
     if (id === myId) return;
@@ -535,3 +539,66 @@ function updateItemHUD() {
 
 window.setCoins = (n) => { myCoins = n; updateCoinHUD(); };
 window.setHeldItem = (item) => { myHeldItem = item; updateItemHUD(); };
+
+window.enterPlacementPhase = function(timeLimit) {
+  window.inPlacementPhase = true;
+  window.movementLocked = true;
+
+  if (player) player.setVisible(false);
+  const scene = window.gameScene;
+  if (scene) {
+    scene.playerLabel.setVisible(false);
+    Object.values(scene.otherPlayers).forEach(s => s.setVisible(false));
+    if (scene.otherPlayerLabels) Object.values(scene.otherPlayerLabels).forEach(l => l.setVisible(false));
+
+    const pZoom = Math.min(GAME_W / 3200, GAME_H / 2400);
+    scene.cameras.main.setZoom(pZoom);
+    const scrollX = Math.max(0, 2000 - GAME_W / (2 * pZoom));
+    const scrollY = Math.max(0, 2600 - GAME_H / (2 * pZoom));
+    scene.cameras.main.setScroll(scrollX, scrollY);
+  }
+
+  ['item-hud', 'coin-hud', 'position-hud'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+
+  const overlay = document.getElementById('placement-overlay');
+  const timerEl = document.getElementById('placement-timer');
+  if (overlay) overlay.style.display = 'flex';
+
+  let remaining = timeLimit;
+  if (timerEl) timerEl.textContent = 'Place your obstacle — ' + remaining;
+  placementTimerInterval = setInterval(() => {
+    remaining--;
+    if (timerEl) timerEl.textContent = 'Place your obstacle — ' + remaining;
+    if (remaining <= 0) { clearInterval(placementTimerInterval); placementTimerInterval = null; }
+  }, 1000);
+};
+
+window.exitPlacementPhase = function() {
+  window.inPlacementPhase = false;
+
+  if (placementTimerInterval) { clearInterval(placementTimerInterval); placementTimerInterval = null; }
+
+  const overlay = document.getElementById('placement-overlay');
+  if (overlay) overlay.style.display = 'none';
+
+  ['item-hud', 'coin-hud', 'position-hud'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'block';
+  });
+
+  const scene = window.gameScene;
+  const normalZoom = _isMobile ? 0.6 : 1;
+  if (scene) {
+    scene.cameras.main.setZoom(normalZoom);
+    vpHalfW = GAME_W / (2 * normalZoom);
+    vpHalfH = GAME_H / (2 * normalZoom);
+    vpW = GAME_W / normalZoom;
+    vpH = GAME_H / normalZoom;
+  }
+
+  if (player) player.setVisible(true);
+  if (scene) scene.playerLabel.setVisible(true);
+};

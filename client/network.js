@@ -109,6 +109,14 @@ function connectToServer(playerName) {
       if (statusEl) statusEl.textContent = data.ready + ' / ' + data.total + ' ready';
     }
 
+    if (data.type === "placementStart") {
+      if (window.enterPlacementPhase) window.enterPlacementPhase(data.timeLimit);
+    }
+
+    if (data.type === "placementEnd") {
+      if (window.exitPlacementPhase) window.exitPlacementPhase();
+    }
+
     if (data.type === "powerupsReset") {
       if (window.gameScene && window.gameScene.powerUps) {
         window.gameScene.powerUps.reset();

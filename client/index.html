@@ -498,6 +498,27 @@
     #btn-use.pressed {
       background: rgba(74,143,232,0.88);
     }
+
+    #placement-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      flex-direction: column;
+      align-items: center;
+      pointer-events: none;
+      z-index: 100;
+      padding-top: 24px;
+    }
+
+    #placement-timer {
+      font-size: 28px;
+      font-weight: bold;
+      color: white;
+      background: rgba(0, 0, 0, 0.72);
+      padding: 10px 28px;
+      border-radius: 8px;
+      letter-spacing: 1px;
+    }
   </style>
 </head>
 
@@ -592,6 +613,10 @@
   <div id="dpad-right">
     <button class="dpad-btn" id="btn-down">&#9660;</button>
     <button class="dpad-btn" id="btn-up">&#9650;</button>
+  </div>
+
+  <div id="placement-overlay">
+    <div id="placement-timer">Place your obstacle — 15</div>
   </div>
 
   <div id="scoreboard-overlay">
