@@ -575,10 +575,10 @@ window.enterPlacementPhase = function(timeLimit, menuItems) {
     Object.values(scene.otherPlayers).forEach(s => s.setVisible(false));
     if (scene.otherPlayerLabels) Object.values(scene.otherPlayerLabels).forEach(l => l.setVisible(false));
 
-    const pZoom = Math.min(GAME_W / 3200, GAME_H / 2400);
+    const pZoom = Math.min(GAME_W / 3200, GAME_H / 2600);
     scene.cameras.main.setZoom(pZoom);
     const scrollX = Math.max(0, 2000 - GAME_W / (2 * pZoom));
-    const scrollY = Math.max(0, 2800 - GAME_H / (2 * pZoom));
+    const scrollY = Math.max(0, 3000 - GAME_H / (2 * pZoom));
     scene.cameras.main.setScroll(scrollX, scrollY);
 
     scene._obstaclePlaced = false;
@@ -588,23 +588,20 @@ window.enterPlacementPhase = function(timeLimit, menuItems) {
     scene._hasConfirmed = false;
 
     scene._domPointerMove = (e) => {
-      if (!scene._ghostSprite || scene._obstaclePlaced) return;
+      if (!scene._ghostSprite) return;
+      const canvas = scene.game.canvas;
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
       const cx = e.clientX !== undefined ? e.clientX : (e.touches ? e.touches[0].clientX : null);
       const cy = e.clientY !== undefined ? e.clientY : (e.touches ? e.touches[0].clientY : null);
       if (cx === null) return;
-      const wp = scene.cameras.main.getWorldPoint(cx, cy);
+      const canvasX = (cx - rect.left) * scaleX;
+      const canvasY = (cy - rect.top) * scaleY;
+      const wp = scene.cameras.main.getWorldPoint(canvasX, canvasY);
       scene._ghostSprite.setPosition(wp.x, wp.y);
     };
-    scene._domPointerUp = (e) => {
-      if (!scene._selectedObstacleType || scene._obstaclePlaced || !scene._ghostSprite) return;
-      if (e.target && e.target.closest && e.target.closest('#placement-menu')) return;
-      scene._obstaclePlaced = true;
-      scene._ghostSprite.setAlpha(0.9);
-      document.getElementById('placement-menu').style.display = 'none';
-      document.getElementById('obstacle-controls').style.display = 'flex';
-    };
     document.addEventListener('pointermove', scene._domPointerMove);
-    document.addEventListener('pointerup', scene._domPointerUp);
 
     scene._rotateKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
   }
@@ -671,9 +668,7 @@ window.exitPlacementPhase = function() {
     vpH = GAME_H / normalZoom;
 
     if (scene._domPointerMove) document.removeEventListener('pointermove', scene._domPointerMove);
-    if (scene._domPointerUp) document.removeEventListener('pointerup', scene._domPointerUp);
     scene._domPointerMove = null;
-    scene._domPointerUp = null;
 
     if (scene._ghostSprite) { scene._ghostSprite.destroy(); scene._ghostSprite = null; }
     if (scene._rotateKey) {
@@ -692,7 +687,7 @@ window.exitPlacementPhase = function() {
 
 window.selectObstacle = function(type) {
   const scene = window.gameScene;
-  if (!scene || !window.inPlacementPhase || scene._obstaclePlaced) return;
+  if (!scene || !window.inPlacementPhase || scene._hasConfirmed) return;
 
   document.querySelectorAll('.obstacle-item').forEach(el => {
     el.classList.toggle('selected', el.dataset.type === type);
@@ -710,6 +705,8 @@ window.selectObstacle = function(type) {
   scene._ghostSprite.setScale(OBSTACLE_SCALES[type] || 0.5);
   scene._ghostSprite.setDepth(3);
   scene._ghostSprite.setAngle(0);
+
+  document.getElementById('obstacle-controls').style.display = 'flex';
 };
 
 window.rotatePlacementGhost = function() {
@@ -721,11 +718,12 @@ window.rotatePlacementGhost = function() {
 
 window.confirmObstaclePlacement = function() {
   const scene = window.gameScene;
-  if (!scene || !scene._ghostSprite || !scene._obstaclePlaced || scene._hasConfirmed) return;
+  if (!scene || !scene._ghostSprite || !scene._selectedObstacleType || scene._hasConfirmed) return;
   scene._hasConfirmed = true;
   sendPlaceObstacle(scene._selectedObstacleType, scene._ghostSprite.x, scene._ghostSprite.y, scene._obstacleRotation);
   if (placementTimerInterval) { clearInterval(placementTimerInterval); placementTimerInterval = null; }
   document.getElementById('obstacle-controls').style.display = 'none';
+  document.getElementById('placement-menu').style.display = 'none';
   const timerEl = document.getElementById('placement-timer');
   if (timerEl) timerEl.textContent = 'Waiting for others…';
 };

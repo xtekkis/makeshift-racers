@@ -521,13 +521,20 @@
       letter-spacing: 1px;
     }
 
+    #placement-bottom {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
     #placement-menu {
       display: none;
       flex-direction: row;
       gap: 12px;
       padding: 16px 20px;
       background: rgba(0, 0, 0, 0.78);
-      border-radius: 14px 14px 0 0;
+      border-radius: 14px;
       pointer-events: auto;
     }
 
@@ -564,9 +571,9 @@
       display: none;
       flex-direction: row;
       gap: 16px;
-      padding: 16px 20px;
+      padding: 12px 20px;
       background: rgba(0, 0, 0, 0.78);
-      border-radius: 14px 14px 0 0;
+      border-radius: 10px;
       pointer-events: auto;
     }
 
@@ -689,10 +696,12 @@
 
   <div id="placement-overlay">
     <div id="placement-timer">Place your obstacle — 15</div>
-    <div id="placement-menu"></div>
-    <div id="obstacle-controls">
-      <button id="obstacle-rotate" onclick="window.rotatePlacementGhost && window.rotatePlacementGhost()">&#8635; Rotate</button>
-      <button id="obstacle-confirm" onclick="window.confirmObstaclePlacement && window.confirmObstaclePlacement()">&#10003; Place</button>
+    <div id="placement-bottom">
+      <div id="obstacle-controls">
+        <button id="obstacle-rotate" onclick="window.rotatePlacementGhost && window.rotatePlacementGhost()">&#8635; Rotate</button>
+        <button id="obstacle-confirm" onclick="window.confirmObstaclePlacement && window.confirmObstaclePlacement()">&#10003; Place</button>
+      </div>
+      <div id="placement-menu"></div>
     </div>
   </div>
 
