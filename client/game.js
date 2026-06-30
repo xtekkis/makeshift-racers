@@ -63,6 +63,19 @@ const CAM_LERP = 0.05;
 const FRAME_MS = 1000 / 60;
 const NUM_CAR_VARIANTS = 8;
 
+const ALL_OBSTACLE_TYPES = ['barrel_red', 'barrier_red', 'barrier_white', 'cone-straight', 'rock_small', 'rock_medium', 'rock_large', 'bush_large', 'bush_small'];
+const OBSTACLE_SCALES = {
+  'barrel_red':    0.35,
+  'barrier_red':   0.5,
+  'barrier_white': 0.5,
+  'cone-straight': 0.3,
+  'rock_small':    0.4,
+  'rock_medium':   0.5,
+  'rock_large':    0.6,
+  'bush_large':    0.6,
+  'bush_small':    0.45,
+};
+
 const VEHICLE_STATS = {
   f1:    { turnSpeed: 2.2, scaleX: 0.1,  scaleY: 0.1,  accel: 6, angleOffset: -90, hitL: 12, hitW: 10, maxSpeed: 450, wrenchMult: 0.30, bumpResist: 1.0 },
   car:   { turnSpeed: 1.8, scaleX: 0.44, scaleY: 0.32, accel: 7, angleOffset:  90, hitL: 28, hitW: 18, maxSpeed: 400, wrenchMult: 0.30, bumpResist: 1.0 },
@@ -92,6 +105,9 @@ function preload() {
     this.load.image('car_' + i,          'assets/car_' + i + '.png');
   }
   this.load.image('truck_0', 'assets/truck_0.png');
+  ALL_OBSTACLE_TYPES.forEach(t => {
+    this.load.image(t, 'assets/obstacles/' + t + '.png');
+  });
 }
 
 function create() {
@@ -205,7 +221,12 @@ function isOverlappingAnyPlayer(scene) {
 }
 
 function update(time, delta) {
-  if (window.inPlacementPhase) return;
+  if (window.inPlacementPhase) {
+    if (this._rotateKey && Phaser.Input.Keyboard.JustDown(this._rotateKey)) {
+      if (window.rotatePlacementGhost) window.rotatePlacementGhost();
+    }
+    return;
+  }
   const vType = window.vehicleType || 'f1';
   const { turnSpeed, angleOffset, accel } = VEHICLE_STATS[vType];
 
@@ -540,7 +561,7 @@ function updateItemHUD() {
 window.setCoins = (n) => { myCoins = n; updateCoinHUD(); };
 window.setHeldItem = (item) => { myHeldItem = item; updateItemHUD(); };
 
-window.enterPlacementPhase = function(timeLimit) {
+window.enterPlacementPhase = function(timeLimit, menuItems) {
   window.inPlacementPhase = true;
   window.movementLocked = true;
 
@@ -556,12 +577,54 @@ window.enterPlacementPhase = function(timeLimit) {
     const scrollX = Math.max(0, 2000 - GAME_W / (2 * pZoom));
     const scrollY = Math.max(0, 2600 - GAME_H / (2 * pZoom));
     scene.cameras.main.setScroll(scrollX, scrollY);
+
+    scene._obstaclePlaced = false;
+    scene._selectedObstacleType = null;
+    scene._obstacleRotation = 0;
+    scene._ghostSprite = null;
+    scene._hasConfirmed = false;
+
+    scene._onPlacementMove = (ptr) => {
+      if (scene._ghostSprite && !scene._obstaclePlaced) {
+        const wp = scene.cameras.main.getWorldPoint(ptr.x, ptr.y);
+        scene._ghostSprite.setPosition(wp.x, wp.y);
+      }
+    };
+    scene._onPlacementDown = () => {
+      if (!scene._selectedObstacleType || scene._obstaclePlaced || !scene._ghostSprite) return;
+      scene._obstaclePlaced = true;
+      scene._ghostSprite.setAlpha(0.9);
+      document.getElementById('placement-menu').style.display = 'none';
+      document.getElementById('obstacle-controls').style.display = 'flex';
+    };
+    scene.input.on('pointermove', scene._onPlacementMove);
+    scene.input.on('pointerdown', scene._onPlacementDown);
+
+    scene._rotateKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
   }
 
   ['item-hud', 'coin-hud', 'position-hud'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
+
+  const menuEl = document.getElementById('placement-menu');
+  if (menuEl && menuItems) {
+    menuEl.innerHTML = '';
+    menuItems.forEach(type => {
+      const item = document.createElement('div');
+      item.className = 'obstacle-item';
+      item.dataset.type = type;
+      const img = document.createElement('img');
+      img.src = 'assets/obstacles/' + type + '.png';
+      img.alt = type;
+      item.appendChild(img);
+      item.addEventListener('click', () => { if (window.selectObstacle) window.selectObstacle(type); });
+      menuEl.appendChild(item);
+    });
+    menuEl.style.display = 'flex';
+  }
+  document.getElementById('obstacle-controls').style.display = 'none';
 
   const overlay = document.getElementById('placement-overlay');
   const timerEl = document.getElementById('placement-timer');
@@ -571,7 +634,8 @@ window.enterPlacementPhase = function(timeLimit) {
   if (timerEl) timerEl.textContent = 'Place your obstacle — ' + remaining;
   placementTimerInterval = setInterval(() => {
     remaining--;
-    if (timerEl) timerEl.textContent = 'Place your obstacle — ' + remaining;
+    const s = window.gameScene;
+    if (timerEl && !(s && s._hasConfirmed)) timerEl.textContent = 'Place your obstacle — ' + remaining;
     if (remaining <= 0) { clearInterval(placementTimerInterval); placementTimerInterval = null; }
   }, 1000);
 };
@@ -583,6 +647,8 @@ window.exitPlacementPhase = function() {
 
   const overlay = document.getElementById('placement-overlay');
   if (overlay) overlay.style.display = 'none';
+  document.getElementById('placement-menu').style.display = 'none';
+  document.getElementById('obstacle-controls').style.display = 'none';
 
   ['item-hud', 'coin-hud', 'position-hud'].forEach(id => {
     const el = document.getElementById(id);
@@ -597,8 +663,63 @@ window.exitPlacementPhase = function() {
     vpHalfH = GAME_H / (2 * normalZoom);
     vpW = GAME_W / normalZoom;
     vpH = GAME_H / normalZoom;
+
+    if (scene._onPlacementMove) scene.input.off('pointermove', scene._onPlacementMove);
+    if (scene._onPlacementDown) scene.input.off('pointerdown', scene._onPlacementDown);
+    scene._onPlacementMove = null;
+    scene._onPlacementDown = null;
+
+    if (scene._ghostSprite) { scene._ghostSprite.destroy(); scene._ghostSprite = null; }
+    if (scene._rotateKey) {
+      scene.input.keyboard.removeKey(Phaser.Input.Keyboard.KeyCodes.R);
+      scene._rotateKey = null;
+    }
+    scene._obstaclePlaced = false;
+    scene._selectedObstacleType = null;
+    scene._obstacleRotation = 0;
+    scene._hasConfirmed = false;
   }
 
   if (player) player.setVisible(true);
   if (scene) scene.playerLabel.setVisible(true);
+};
+
+window.selectObstacle = function(type) {
+  const scene = window.gameScene;
+  if (!scene || !window.inPlacementPhase || scene._obstaclePlaced) return;
+
+  document.querySelectorAll('.obstacle-item').forEach(el => {
+    el.classList.toggle('selected', el.dataset.type === type);
+  });
+
+  if (scene._ghostSprite) { scene._ghostSprite.destroy(); scene._ghostSprite = null; }
+
+  scene._selectedObstacleType = type;
+  scene._obstacleRotation = 0;
+
+  const ptr = scene.input.activePointer;
+  const wp = scene.cameras.main.getWorldPoint(ptr.x || GAME_W / 2, ptr.y || GAME_H / 2);
+  scene._ghostSprite = scene.add.image(wp.x, wp.y, type);
+  scene._ghostSprite.setAlpha(0.6);
+  scene._ghostSprite.setScale(OBSTACLE_SCALES[type] || 0.5);
+  scene._ghostSprite.setDepth(3);
+  scene._ghostSprite.setAngle(0);
+};
+
+window.rotatePlacementGhost = function() {
+  const scene = window.gameScene;
+  if (!scene || !scene._ghostSprite) return;
+  scene._obstacleRotation = ((scene._obstacleRotation || 0) + 90) % 360;
+  scene._ghostSprite.setAngle(scene._obstacleRotation);
+};
+
+window.confirmObstaclePlacement = function() {
+  const scene = window.gameScene;
+  if (!scene || !scene._ghostSprite || !scene._obstaclePlaced || scene._hasConfirmed) return;
+  scene._hasConfirmed = true;
+  sendPlaceObstacle(scene._selectedObstacleType, scene._ghostSprite.x, scene._ghostSprite.y, scene._obstacleRotation);
+  if (placementTimerInterval) { clearInterval(placementTimerInterval); placementTimerInterval = null; }
+  document.getElementById('obstacle-controls').style.display = 'none';
+  const timerEl = document.getElementById('placement-timer');
+  if (timerEl) timerEl.textContent = 'Waiting for others…';
 };

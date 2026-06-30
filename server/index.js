@@ -635,7 +635,9 @@ function resetRoundState(startNew) {
 function startPlacementPhase() {
   placementPhase = true;
   Object.values(rooms).forEach(p => { p.placementReady = false; });
-  broadcast({ type: "placementStart", obstacles, timeLimit: 15 });
+  const allTypes = ['barrel_red', 'barrier_red', 'barrier_white', 'cone-straight', 'rock_small', 'rock_medium', 'rock_large', 'bush_large', 'bush_small'];
+  const menuItems = allTypes.slice().sort(() => Math.random() - 0.5).slice(0, 6);
+  broadcast({ type: "placementStart", obstacles, timeLimit: 15, menuItems });
   placementTimer = setTimeout(endPlacementPhase, 15000);
 }
 

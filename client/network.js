@@ -110,7 +110,7 @@ function connectToServer(playerName) {
     }
 
     if (data.type === "placementStart") {
-      if (window.enterPlacementPhase) window.enterPlacementPhase(data.timeLimit);
+      if (window.enterPlacementPhase) window.enterPlacementPhase(data.timeLimit, data.menuItems);
     }
 
     if (data.type === "placementEnd") {
@@ -166,5 +166,11 @@ function sendBump(targetSessionId, vx, vy) {
 function sendUseItem() {
   if (socket && socket.readyState === WebSocket.OPEN) {
     socket.send(JSON.stringify({ type: "useItem" }));
+  }
+}
+
+function sendPlaceObstacle(obstacleType, x, y, rotation) {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({ type: "placeObstacle", obstacleType, x, y, rotation }));
   }
 }

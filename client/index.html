@@ -505,9 +505,10 @@
       inset: 0;
       flex-direction: column;
       align-items: center;
+      justify-content: space-between;
       pointer-events: none;
       z-index: 100;
-      padding-top: 24px;
+      padding: 24px 0;
     }
 
     #placement-timer {
@@ -518,6 +519,77 @@
       padding: 10px 28px;
       border-radius: 8px;
       letter-spacing: 1px;
+    }
+
+    #placement-menu {
+      display: none;
+      flex-direction: row;
+      gap: 12px;
+      padding: 16px 20px;
+      background: rgba(0, 0, 0, 0.78);
+      border-radius: 14px 14px 0 0;
+      pointer-events: auto;
+    }
+
+    .obstacle-item {
+      width: 80px;
+      height: 80px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: border-color 0.12s, transform 0.1s;
+    }
+
+    .obstacle-item:hover {
+      border-color: rgba(255, 255, 255, 0.7);
+      transform: scale(1.06);
+    }
+
+    .obstacle-item.selected {
+      border-color: #4ae87a;
+      background: rgba(74, 232, 122, 0.12);
+    }
+
+    .obstacle-item img {
+      max-width: 58px;
+      max-height: 58px;
+      object-fit: contain;
+    }
+
+    #obstacle-controls {
+      display: none;
+      flex-direction: row;
+      gap: 16px;
+      padding: 16px 20px;
+      background: rgba(0, 0, 0, 0.78);
+      border-radius: 14px 14px 0 0;
+      pointer-events: auto;
+    }
+
+    #obstacle-rotate {
+      padding: 12px 28px;
+      font-size: 17px;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #4a8fe8;
+      color: white;
+    }
+
+    #obstacle-confirm {
+      padding: 12px 28px;
+      font-size: 17px;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #4ae87a;
+      color: #1a1a2e;
     }
   </style>
 </head>
@@ -617,6 +689,11 @@
 
   <div id="placement-overlay">
     <div id="placement-timer">Place your obstacle — 15</div>
+    <div id="placement-menu"></div>
+    <div id="obstacle-controls">
+      <button id="obstacle-rotate" onclick="window.rotatePlacementGhost && window.rotatePlacementGhost()">&#8635; Rotate</button>
+      <button id="obstacle-confirm" onclick="window.confirmObstaclePlacement && window.confirmObstaclePlacement()">&#10003; Place</button>
+    </div>
   </div>
 
   <div id="scoreboard-overlay">
