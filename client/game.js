@@ -221,12 +221,6 @@ function isOverlappingAnyPlayer(scene) {
 }
 
 function update(time, delta) {
-  if (window.inPlacementPhase) {
-    if (this._rotateKey && Phaser.Input.Keyboard.JustDown(this._rotateKey)) {
-      if (window.rotatePlacementGhost) window.rotatePlacementGhost();
-    }
-    return;
-  }
   const vType = window.vehicleType || 'f1';
   const { turnSpeed, angleOffset, accel } = VEHICLE_STATS[vType];
 
@@ -247,9 +241,18 @@ function update(time, delta) {
     spawnProtectionTimer = SPAWN_PROTECTION_DURATION;
     window.incomingRespawn = null;
     myCoins = 0;
+    myHeldItem = null;
     wrenchTimer = 0;
     window.iFinished = false;
     updateCoinHUD();
+    updateItemHUD();
+  }
+
+  if (window.inPlacementPhase) {
+    if (this._rotateKey && Phaser.Input.Keyboard.JustDown(this._rotateKey)) {
+      if (window.rotatePlacementGhost) window.rotatePlacementGhost();
+    }
+    return;
   }
 
   if (window.incomingBump && !spawnProtection) {

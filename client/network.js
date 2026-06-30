@@ -110,6 +110,7 @@ function connectToServer(playerName) {
     }
 
     if (data.type === "placementStart") {
+      hideScoreboard();
       if (window.enterPlacementPhase) window.enterPlacementPhase(data.timeLimit, data.menuItems);
     }
 
