@@ -479,6 +479,11 @@ wss.on("connection", (ws) => {
       }
     }
     
+    if (data.type === "ghostMove") {
+      if (!placementPhase) return;
+      broadcast({ type: "playerGhostMove", sessionId, obstacleType: data.obstacleType, x: data.x, y: data.y, rotation: data.rotation || 0 }, ws);
+    }
+
     if (data.type === "placeObstacle") {
       if (!placementPhase) return;
       const p = rooms[sessionId];
@@ -649,9 +654,9 @@ function endPlacementPhase() {
   startCountdown();
 }
 
-function broadcast(data) {
+function broadcast(data, exclude) {
   wss.clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
+    if (client.readyState === WebSocket.OPEN && client !== exclude) {
       client.send(JSON.stringify(data));
     }
   });

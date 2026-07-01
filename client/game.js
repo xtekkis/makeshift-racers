@@ -602,6 +602,8 @@ window.enterPlacementPhase = function(timeLimit, menuItems) {
     scene._hasConfirmed = false;
     scene._placedObstacles = [];
     scene._placementValid = false;
+    scene._otherGhosts = {};
+    scene._lastGhostSend = 0;
 
     scene._domPointerMove = (e) => {
       if (!scene._ghostSprite || scene._obstaclePlaced) return;
@@ -619,6 +621,11 @@ window.enterPlacementPhase = function(timeLimit, menuItems) {
       const valid = checkPlacementValid(scene, wp.x, wp.y);
       scene._placementValid = valid;
       scene._ghostSprite.setTint(valid ? 0xffffff : 0xff4444);
+      const now = Date.now();
+      if (now - scene._lastGhostSend > 80) {
+        sendGhostMove(scene._selectedObstacleType, wp.x, wp.y, scene._obstacleRotation || 0);
+        scene._lastGhostSend = now;
+      }
     };
     scene._domPointerUp = (e) => {
       if (!scene._selectedObstacleType || scene._obstaclePlaced || !scene._ghostSprite) return;
@@ -631,6 +638,7 @@ window.enterPlacementPhase = function(timeLimit, menuItems) {
       const valid = checkPlacementValid(scene, scene._ghostSprite.x, scene._ghostSprite.y);
       scene._placementValid = valid;
       scene._ghostSprite.setTint(valid ? 0xffffff : 0xff4444);
+      sendGhostMove(scene._selectedObstacleType, scene._ghostSprite.x, scene._ghostSprite.y, scene._obstacleRotation || 0);
       document.getElementById('obstacle-controls').style.display = 'flex';
       const confirmBtn = document.getElementById('obstacle-confirm');
       if (confirmBtn) confirmBtn.disabled = !valid;
@@ -708,6 +716,10 @@ window.exitPlacementPhase = function() {
     scene._domPointerUp = null;
 
     if (scene._ghostSprite) { scene._ghostSprite.destroy(); scene._ghostSprite = null; }
+    if (scene._otherGhosts) {
+      Object.values(scene._otherGhosts).forEach(s => s.destroy());
+      scene._otherGhosts = {};
+    }
     if (scene._rotateKey) {
       scene.input.keyboard.removeKey(Phaser.Input.Keyboard.KeyCodes.R);
       scene._rotateKey = null;
@@ -729,6 +741,45 @@ window.exitPlacementPhase = function() {
 window.markObstacleUsed = function(type) {
   const el = document.querySelector(`.obstacle-item[data-type="${type}"]`);
   if (el) el.classList.add('used');
+};
+
+window.handlePlayerGhostMove = function(sessionId, type, x, y, rotation) {
+  const scene = window.gameScene;
+  if (!scene || !window.inPlacementPhase) return;
+  let sprite = scene._otherGhosts[sessionId];
+  if (sprite && sprite._locked) return;
+  if (!sprite || sprite._obstacleType !== type) {
+    if (sprite) sprite.destroy();
+    sprite = scene.add.image(x, y, type);
+    sprite.setAlpha(0.4);
+    sprite.setTint(0xaaddff);
+    sprite.setScale(OBSTACLE_SCALES[type] || 0.5);
+    sprite.setDepth(2);
+    sprite._obstacleType = type;
+    sprite._locked = false;
+    scene._otherGhosts[sessionId] = sprite;
+  }
+  sprite.setPosition(x, y);
+  sprite.setAngle(rotation || 0);
+};
+
+window.lockPlayerObstacle = function(sessionId, obstacle) {
+  const scene = window.gameScene;
+  if (!scene) return;
+  let sprite = scene._otherGhosts[sessionId];
+  if (!sprite || sprite._obstacleType !== obstacle.type) {
+    if (sprite) sprite.destroy();
+    sprite = scene.add.image(obstacle.x, obstacle.y, obstacle.type);
+    sprite.setScale(OBSTACLE_SCALES[obstacle.type] || 0.5);
+    sprite.setDepth(2);
+    sprite._obstacleType = obstacle.type;
+    scene._otherGhosts[sessionId] = sprite;
+  }
+  sprite.setPosition(obstacle.x, obstacle.y);
+  sprite.setAngle(obstacle.rotation || 0);
+  sprite.setAlpha(1.0);
+  sprite.clearTint();
+  sprite._locked = true;
 };
 
 window.selectObstacle = function(type) {
@@ -766,6 +817,9 @@ window.rotatePlacementGhost = function() {
   if (!scene || !scene._ghostSprite) return;
   scene._obstacleRotation = ((scene._obstacleRotation || 0) + 90) % 360;
   scene._ghostSprite.setAngle(scene._obstacleRotation);
+  if (scene._selectedObstacleType) {
+    sendGhostMove(scene._selectedObstacleType, scene._ghostSprite.x, scene._ghostSprite.y, scene._obstacleRotation);
+  }
 };
 
 window.confirmObstaclePlacement = function() {
@@ -773,6 +827,8 @@ window.confirmObstaclePlacement = function() {
   if (!scene || !scene._ghostSprite || !scene._obstaclePlaced || scene._hasConfirmed) return;
   if (!scene._placementValid) return;
   scene._hasConfirmed = true;
+  scene._ghostSprite.setAlpha(1.0);
+  scene._ghostSprite.clearTint();
   sendPlaceObstacle(scene._selectedObstacleType, scene._ghostSprite.x, scene._ghostSprite.y, scene._obstacleRotation);
   if (placementTimerInterval) { clearInterval(placementTimerInterval); placementTimerInterval = null; }
   document.getElementById('obstacle-controls').style.display = 'none';

@@ -122,6 +122,11 @@ function connectToServer(playerName) {
       if (window.markObstacleUsed) window.markObstacleUsed(data.obstacle.type);
       const sc = window.gameScene;
       if (sc && sc._placedObstacles) sc._placedObstacles.push({ x: data.obstacle.x, y: data.obstacle.y });
+      if (window.lockPlayerObstacle) window.lockPlayerObstacle(data.obstacle.sessionId, data.obstacle);
+    }
+
+    if (data.type === "playerGhostMove") {
+      if (window.handlePlayerGhostMove) window.handlePlayerGhostMove(data.sessionId, data.obstacleType, data.x, data.y, data.rotation);
     }
 
     if (data.type === "powerupsReset") {
@@ -179,5 +184,11 @@ function sendUseItem() {
 function sendPlaceObstacle(obstacleType, x, y, rotation) {
   if (socket && socket.readyState === WebSocket.OPEN) {
     socket.send(JSON.stringify({ type: "placeObstacle", obstacleType, x, y, rotation }));
+  }
+}
+
+function sendGhostMove(obstacleType, x, y, rotation) {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({ type: "ghostMove", obstacleType, x, y, rotation }));
   }
 }
