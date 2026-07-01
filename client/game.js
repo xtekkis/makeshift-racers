@@ -564,6 +564,19 @@ function updateItemHUD() {
 window.setCoins = (n) => { myCoins = n; updateCoinHUD(); };
 window.setHeldItem = (item) => { myHeldItem = item; updateItemHUD(); };
 
+function checkPlacementValid(scene, x, y) {
+  if (scene.track.isOffTrack(x, y)) return false;
+  // start/finish zone exclusion (radius 450 around finish line center)
+  const fdx = x - 1800, fdy = y - 3600;
+  if (fdx * fdx + fdy * fdy < 450 * 450) return false;
+  // min distance between obstacles
+  for (const obs of scene._placedObstacles) {
+    const dx = x - obs.x, dy = y - obs.y;
+    if (dx * dx + dy * dy < 220 * 220) return false;
+  }
+  return true;
+}
+
 window.enterPlacementPhase = function(timeLimit, menuItems) {
   window.inPlacementPhase = true;
   window.movementLocked = true;
@@ -587,6 +600,8 @@ window.enterPlacementPhase = function(timeLimit, menuItems) {
     scene._obstacleRotation = 0;
     scene._ghostSprite = null;
     scene._hasConfirmed = false;
+    scene._placedObstacles = [];
+    scene._placementValid = false;
 
     scene._domPointerMove = (e) => {
       if (!scene._ghostSprite || scene._obstaclePlaced) return;
@@ -601,6 +616,9 @@ window.enterPlacementPhase = function(timeLimit, menuItems) {
       const canvasY = (cy - rect.top) * scaleY;
       const wp = scene.cameras.main.getWorldPoint(canvasX, canvasY);
       scene._ghostSprite.setPosition(wp.x, wp.y);
+      const valid = checkPlacementValid(scene, wp.x, wp.y);
+      scene._placementValid = valid;
+      scene._ghostSprite.setTint(valid ? 0xffffff : 0xff4444);
     };
     scene._domPointerUp = (e) => {
       if (!scene._selectedObstacleType || scene._obstaclePlaced || !scene._ghostSprite) return;
@@ -610,7 +628,12 @@ window.enterPlacementPhase = function(timeLimit, menuItems) {
         if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) return;
       }
       scene._obstaclePlaced = true;
+      const valid = checkPlacementValid(scene, scene._ghostSprite.x, scene._ghostSprite.y);
+      scene._placementValid = valid;
+      scene._ghostSprite.setTint(valid ? 0xffffff : 0xff4444);
       document.getElementById('obstacle-controls').style.display = 'flex';
+      const confirmBtn = document.getElementById('obstacle-confirm');
+      if (confirmBtn) confirmBtn.disabled = !valid;
     };
     document.addEventListener('pointermove', scene._domPointerMove);
     document.addEventListener('pointerup', scene._domPointerUp);
@@ -696,6 +719,8 @@ window.exitPlacementPhase = function() {
   }
 
   document.querySelectorAll('.obstacle-item.used').forEach(el => el.classList.remove('used'));
+  const confirmBtn = document.getElementById('obstacle-confirm');
+  if (confirmBtn) confirmBtn.disabled = false;
 
   if (player) player.setVisible(true);
   if (scene) scene.playerLabel.setVisible(true);
@@ -727,7 +752,12 @@ window.selectObstacle = function(type) {
   scene._ghostSprite.setScale(OBSTACLE_SCALES[type] || 0.5);
   scene._ghostSprite.setDepth(3);
   scene._ghostSprite.setAngle(0);
+  const initValid = checkPlacementValid(scene, wp.x, wp.y);
+  scene._placementValid = initValid;
+  scene._ghostSprite.setTint(initValid ? 0xffffff : 0xff4444);
 
+  const confirmBtn = document.getElementById('obstacle-confirm');
+  if (confirmBtn) confirmBtn.disabled = false;
   document.getElementById('obstacle-controls').style.display = 'none';
 };
 
@@ -741,6 +771,7 @@ window.rotatePlacementGhost = function() {
 window.confirmObstaclePlacement = function() {
   const scene = window.gameScene;
   if (!scene || !scene._ghostSprite || !scene._obstaclePlaced || scene._hasConfirmed) return;
+  if (!scene._placementValid) return;
   scene._hasConfirmed = true;
   sendPlaceObstacle(scene._selectedObstacleType, scene._ghostSprite.x, scene._ghostSprite.y, scene._obstacleRotation);
   if (placementTimerInterval) { clearInterval(placementTimerInterval); placementTimerInterval = null; }
