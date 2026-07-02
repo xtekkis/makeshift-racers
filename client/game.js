@@ -76,6 +76,11 @@ const OBSTACLE_SCALES = {
   'bush_small':    0.45,
 };
 
+const FINISH_ZONE_X = 1800;
+const FINISH_ZONE_Y = 3600;
+const FINISH_ZONE_RADIUS = 450;
+const OBSTACLE_MIN_DIST = 220;
+
 const OBSTACLE_RADII = {
   'barrel_red':    18,
   'barrier_red':   45,
@@ -398,7 +403,6 @@ function update(time, delta) {
       outOfBoundsTimer = 0;
       this.playerSpeed = 0;
       player.setAlpha(0.3);
-      console.log("Player out of bounds!");
     }
   } else {
     outOfBoundsTimer = 0;
@@ -595,13 +599,11 @@ window.setHeldItem = (item) => { myHeldItem = item; updateItemHUD(); };
 
 function checkPlacementValid(scene, x, y) {
   if (scene.track.isOffTrack(x, y)) return false;
-  // start/finish zone exclusion (radius 450 around finish line center)
-  const fdx = x - 1800, fdy = y - 3600;
-  if (fdx * fdx + fdy * fdy < 450 * 450) return false;
-  // min distance between obstacles
+  const fdx = x - FINISH_ZONE_X, fdy = y - FINISH_ZONE_Y;
+  if (fdx * fdx + fdy * fdy < FINISH_ZONE_RADIUS * FINISH_ZONE_RADIUS) return false;
   for (const obs of scene._placedObstacles) {
     const dx = x - obs.x, dy = y - obs.y;
-    if (dx * dx + dy * dy < 220 * 220) return false;
+    if (dx * dx + dy * dy < OBSTACLE_MIN_DIST * OBSTACLE_MIN_DIST) return false;
   }
   return true;
 }
@@ -633,6 +635,14 @@ window.enterPlacementPhase = function(timeLimit, menuItems) {
     scene._placementValid = false;
     scene._otherGhosts = {};
     scene._lastGhostSend = 0;
+
+    const zoneGfx = scene.add.graphics();
+    zoneGfx.fillStyle(0xff3333, 0.18);
+    zoneGfx.fillCircle(FINISH_ZONE_X, FINISH_ZONE_Y, FINISH_ZONE_RADIUS);
+    zoneGfx.lineStyle(3, 0xff3333, 0.55);
+    zoneGfx.strokeCircle(FINISH_ZONE_X, FINISH_ZONE_Y, FINISH_ZONE_RADIUS);
+    zoneGfx.setDepth(0.5);
+    scene._exclusionZoneGfx = zoneGfx;
 
     scene._domPointerMove = (e) => {
       if (!scene._ghostSprite || scene._obstaclePlaced) return;
@@ -744,6 +754,7 @@ window.exitPlacementPhase = function() {
     scene._domPointerMove = null;
     scene._domPointerUp = null;
 
+    if (scene._exclusionZoneGfx) { scene._exclusionZoneGfx.destroy(); scene._exclusionZoneGfx = null; }
     if (scene._ghostSprite) { scene._ghostSprite.destroy(); scene._ghostSprite = null; }
     if (scene._otherGhosts) {
       Object.values(scene._otherGhosts).forEach(s => s.destroy());
