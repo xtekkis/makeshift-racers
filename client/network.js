@@ -116,6 +116,7 @@ function connectToServer(playerName) {
 
     if (data.type === "placementEnd") {
       if (window.exitPlacementPhase) window.exitPlacementPhase();
+      if (window.renderObstacles) window.renderObstacles(data.obstacles);
     }
 
     if (data.type === "obstaclePlaced") {

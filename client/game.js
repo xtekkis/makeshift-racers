@@ -76,6 +76,18 @@ const OBSTACLE_SCALES = {
   'bush_small':    0.45,
 };
 
+const OBSTACLE_RADII = {
+  'barrel_red':    18,
+  'barrier_red':   45,
+  'barrier_white': 45,
+  'cone':          12,
+  'rock_small':    22,
+  'rock_medium':   35,
+  'rock_large':    48,
+  'bush_large':    45,
+  'bush_small':    28,
+};
+
 const VEHICLE_STATS = {
   f1:    { turnSpeed: 2.2, scaleX: 0.1,  scaleY: 0.1,  accel: 6, angleOffset: -90, hitL: 12, hitW: 10, maxSpeed: 450, wrenchMult: 0.30, bumpResist: 1.0 },
   car:   { turnSpeed: 1.8, scaleX: 0.44, scaleY: 0.32, accel: 7, angleOffset:  90, hitL: 28, hitW: 18, maxSpeed: 400, wrenchMult: 0.30, bumpResist: 1.0 },
@@ -157,6 +169,7 @@ function create() {
   window.gameScene = this;
   window.inPlacementPhase = false;
   this.otherPlayers = {};
+  this.obstacleSprites = [];
 
   ['item-hud', 'coin-hud', 'position-hud'].forEach(id => {
     const el = document.getElementById(id);
@@ -340,7 +353,23 @@ function update(time, delta) {
     deathTimer = DEATH_DURATION;
     this.playerSpeed = 0;
     player.setAlpha(0.3);
-    console.log("Player died!");
+  }
+
+  if (!isDead && !spawnProtection && bumpTimer <= 0) {
+    const { bumpResist } = VEHICLE_STATS[vType];
+    for (const obs of this.obstacleSprites) {
+      const dx = this.playerBody.x - obs.x;
+      const dy = this.playerBody.y - obs.y;
+      const r = OBSTACLE_RADII[obs._type] || 30;
+      if (dx * dx + dy * dy < r * r) {
+        const angle = Math.atan2(dy, dx);
+        bumpVx = Math.cos(angle) * BUMP_FORCE * bumpResist;
+        bumpVy = Math.sin(angle) * BUMP_FORCE * bumpResist;
+        bumpTimer = BUMP_DURATION;
+        this.playerSpeed = 0;
+        break;
+      }
+    }
   }
 
   const leaderX = window.iAmLeader ? this.playerBody.x : (window.leaderX || this.playerBody.x);
@@ -736,6 +765,21 @@ window.exitPlacementPhase = function() {
 
   if (player) player.setVisible(true);
   if (scene) scene.playerLabel.setVisible(true);
+};
+
+window.renderObstacles = function(obstacleList) {
+  const scene = window.gameScene;
+  if (!scene) return;
+  scene.obstacleSprites.forEach(s => s.destroy());
+  scene.obstacleSprites = [];
+  (obstacleList || []).forEach(obs => {
+    const sprite = scene.add.image(obs.x, obs.y, obs.type);
+    sprite.setScale(OBSTACLE_SCALES[obs.type] || 0.5);
+    sprite.setAngle(obs.rotation || 0);
+    sprite.setDepth(1);
+    sprite._type = obs.type;
+    scene.obstacleSprites.push(sprite);
+  });
 };
 
 window.markObstacleUsed = function(type) {
