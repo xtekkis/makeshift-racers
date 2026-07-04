@@ -125,6 +125,12 @@ function preload() {
   ALL_OBSTACLE_TYPES.forEach(t => {
     this.load.image(t, 'assets/obstacles/' + t + '.png');
   });
+  this.load.audio('snd_engine',    'assets/sounds/engine_loop.wav');
+  this.load.audio('snd_bounce',    'assets/sounds/bounce.ogg');
+  this.load.audio('snd_pickup',    'assets/sounds/pickup.ogg');
+  this.load.audio('snd_death',     'assets/sounds/death.mp3');
+  this.load.audio('snd_coin',      'assets/sounds/coin.ogg');
+  this.load.audio('snd_countdown', 'assets/sounds/countdown.wav');
 }
 
 function create() {
@@ -176,6 +182,15 @@ function create() {
   this.otherPlayers = {};
   this.obstacleSprites = [];
 
+  this.sounds = {
+    engine:    this.sound.add('snd_engine',    { loop: true, volume: 0.45 }),
+    bounce:    this.sound.add('snd_bounce',    { volume: 0.8 }),
+    pickup:    this.sound.add('snd_pickup',    { volume: 0.8 }),
+    death:     this.sound.add('snd_death',     { volume: 1.0 }),
+    coin:      this.sound.add('snd_coin',      { volume: 0.65 }),
+    countdown: this.sound.add('snd_countdown', { volume: 0.9 }),
+  };
+
   ['item-hud', 'coin-hud', 'position-hud'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'block';
@@ -221,6 +236,7 @@ function checkCollisions(scene) {
       bumpVy = Math.sin(angle) * BUMP_FORCE * myStats.bumpResist;
       bumpTimer = BUMP_DURATION;
       scene.playerSpeed = 0;
+      if (scene.sounds) scene.sounds.bounce.play();
       sendBump(id, -Math.cos(angle) * BUMP_FORCE, -Math.sin(angle) * BUMP_FORCE);
     }
   });
@@ -279,6 +295,7 @@ function update(time, delta) {
     bumpVy = window.incomingBump.vy * bumpResist;
     bumpTimer = BUMP_DURATION;
     this.playerSpeed = 0;
+    if (this.sounds) this.sounds.bounce.play();
     window.incomingBump = null;
   } else if (window.incomingBump) {
     window.incomingBump = null;
@@ -358,6 +375,7 @@ function update(time, delta) {
     deathTimer = DEATH_DURATION;
     this.playerSpeed = 0;
     player.setAlpha(0.3);
+    if (this.sounds) { this.sounds.engine.stop(); this.sounds.death.play(); }
   }
 
   if (!isDead && !spawnProtection && bumpTimer <= 0) {
@@ -372,6 +390,7 @@ function update(time, delta) {
         bumpVy = Math.sin(angle) * BUMP_FORCE * bumpResist;
         bumpTimer = BUMP_DURATION;
         this.playerSpeed = 0;
+        if (this.sounds) this.sounds.bounce.play();
         break;
       }
     }
@@ -403,6 +422,7 @@ function update(time, delta) {
       outOfBoundsTimer = 0;
       this.playerSpeed = 0;
       player.setAlpha(0.3);
+      if (this.sounds) { this.sounds.engine.stop(); this.sounds.death.play(); }
     }
   } else {
     outOfBoundsTimer = 0;
@@ -594,7 +614,11 @@ function updateItemHUD() {
   }
 }
 
-window.setCoins = (n) => { myCoins = n; updateCoinHUD(); };
+window.setCoins = (n) => {
+  if (n > myCoins) { const sc = window.gameScene; if (sc && sc.sounds) sc.sounds.coin.play(); }
+  myCoins = n;
+  updateCoinHUD();
+};
 window.setHeldItem = (item) => { myHeldItem = item; updateItemHUD(); };
 
 function checkPlacementValid(scene, x, y) {

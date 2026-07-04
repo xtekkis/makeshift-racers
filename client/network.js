@@ -66,6 +66,10 @@ function connectToServer(playerName) {
         text.style.fontSize = '140px';
         text.textContent = data.count;
       }
+      if (data.count === 3) {
+        const sc = window.gameScene;
+        if (sc && sc.sounds) sc.sounds.countdown.play();
+      }
     }
 
     if (data.type === "go") {
@@ -78,6 +82,8 @@ function connectToServer(playerName) {
       setTimeout(() => {
         if (overlay) overlay.style.display = 'none';
         window.movementLocked = false;
+        const sc = window.gameScene;
+        if (sc && sc.sounds && !sc.sounds.engine.isPlaying) sc.sounds.engine.play();
       }, 900);
     }
 
@@ -91,6 +97,8 @@ function connectToServer(playerName) {
         text.textContent = 'Everyone wiped out!';
         overlay.style.display = 'flex';
       }
+      const sc = window.gameScene;
+      if (sc && sc.sounds) sc.sounds.engine.stop();
     }
 
     if (data.type === "youFinished") {
@@ -102,6 +110,8 @@ function connectToServer(playerName) {
       window.movementLocked = true;
       window.roundEndData = data;
       showScoreboard(data);
+      const sc = window.gameScene;
+      if (sc && sc.sounds) sc.sounds.engine.stop();
     }
 
     if (data.type === "roundReadyUpdate") {
@@ -139,7 +149,11 @@ function connectToServer(playerName) {
     if (data.type === "full") { console.log("Room is full!"); }
     if (data.type === "bumped") { window.incomingBump = { vx: data.vx, vy: data.vy }; }
     if (data.type === "respawn") { window.incomingRespawn = { x: data.x, y: data.y, angle: data.angle }; }
-    if (data.type === "itemAssigned") { if (window.setHeldItem) window.setHeldItem(data.item); }
+    if (data.type === "itemAssigned") {
+      if (window.setHeldItem) window.setHeldItem(data.item);
+      const sc = window.gameScene;
+      if (sc && sc.sounds) sc.sounds.pickup.play();
+    }
     if (data.type === "coinUpdate") { if (window.setCoins) window.setCoins(data.coins); }
     if (data.type === "wrenchHit") { window.incomingWrench = true; }
     if (data.type === "shieldBroken") { if (window.setHeldItem) window.setHeldItem(null); }
