@@ -52,6 +52,10 @@ let placementTimerInterval = null;
 let wrenchTimer = 0;
 const WRENCH_DURATION = 3000;
 
+const SKID_SPEED_THRESHOLD = 180;
+const SKID_OFFSETS = { f1: 7, car: 13, truck: 20 };
+const SKID_MAX_DOTS = 1200;
+
 const MAX_SPEED = 400;
 const MAX_REVERSE = 180;
 const ACCEL = 6;
@@ -181,6 +185,10 @@ function create() {
   window.inPlacementPhase = false;
   this.otherPlayers = {};
   this.obstacleSprites = [];
+
+  this.skidGfx = this.add.graphics();
+  this.skidGfx.setDepth(0.4);
+  this._skidCount = 0;
 
   this.sounds = {
     engine:    this.sound.add('snd_engine',    { loop: true, volume: 0.45 }),
@@ -507,6 +515,28 @@ function update(time, delta) {
   player.setTexture(getVehicleTexKey(vType, this.carIndex, turning));
   player.setAngle(this.playerAngle + angleOffset);
 
+  if (this.skidGfx && !isDead && !spawnProtection && !window.movementLocked) {
+    const _dp = window.dpad || {};
+    const isTurning = cursors.left.isDown || this.wasd.left.isDown || _dp.left ||
+                      cursors.right.isDown || this.wasd.right.isDown || _dp.right;
+    if ((isTurning && this.playerSpeed > SKID_SPEED_THRESHOLD) || bumpTimer > 0) {
+      const perpRad = Phaser.Math.DegToRad(this.playerAngle + 90);
+      const offset = SKID_OFFSETS[vType] || 10;
+      const lx = this.playerBody.x + Math.cos(perpRad) * offset;
+      const ly = this.playerBody.y + Math.sin(perpRad) * offset;
+      const rx = this.playerBody.x - Math.cos(perpRad) * offset;
+      const ry = this.playerBody.y - Math.sin(perpRad) * offset;
+      this.skidGfx.fillStyle(0x111111, 0.35);
+      this.skidGfx.fillCircle(lx, ly, 2);
+      this.skidGfx.fillCircle(rx, ry, 2);
+      this._skidCount += 2;
+      if (this._skidCount >= SKID_MAX_DOTS) {
+        this.skidGfx.clear();
+        this._skidCount = 0;
+      }
+    }
+  }
+
   this.playerLabel.x = this.playerBody.x;
   this.playerLabel.y = this.playerBody.y - 20;
 
@@ -805,6 +835,7 @@ window.exitPlacementPhase = function() {
 window.renderObstacles = function(obstacleList) {
   const scene = window.gameScene;
   if (!scene) return;
+  if (scene.skidGfx) { scene.skidGfx.clear(); scene._skidCount = 0; }
   scene.obstacleSprites.forEach(s => s.destroy());
   scene.obstacleSprites = [];
   (obstacleList || []).forEach(obs => {
