@@ -387,13 +387,20 @@ function update(time, delta) {
   }
 
   if (!isDead && bumpTimer <= 0) {
-    const { bumpResist } = VEHICLE_STATS[vType];
+    const { bumpResist, hitL, hitW } = VEHICLE_STATS[vType];
+    const cosA = Math.cos(-this.playerAngle * Math.PI / 180);
+    const sinA = Math.sin(-this.playerAngle * Math.PI / 180);
     for (const obs of this.obstacleSprites) {
-      const dx = this.playerBody.x - obs.x;
-      const dy = this.playerBody.y - obs.y;
-      const r = OBSTACLE_RADII[obs._type] || 30;
-      if (dx * dx + dy * dy < r * r) {
-        const angle = Math.atan2(dy, dx);
+      const obsR = OBSTACLE_RADII[obs._type] || 30;
+      const dx = obs.x - this.playerBody.x;
+      const dy = obs.y - this.playerBody.y;
+      const localX = dx * cosA - dy * sinA;
+      const localY = dx * sinA + dy * cosA;
+      const nearX = Math.max(-hitL, Math.min(hitL, localX));
+      const nearY = Math.max(-hitW, Math.min(hitW, localY));
+      const distSq = (localX - nearX) * (localX - nearX) + (localY - nearY) * (localY - nearY);
+      if (distSq < obsR * obsR) {
+        const angle = Math.atan2(-dy, -dx);
         bumpVx = Math.cos(angle) * BUMP_FORCE * bumpResist;
         bumpVy = Math.sin(angle) * BUMP_FORCE * bumpResist;
         bumpTimer = BUMP_DURATION;
