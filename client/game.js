@@ -386,7 +386,7 @@ function update(time, delta) {
     if (this.sounds) { this.sounds.engine.stop(); this.sounds.death.play(); }
   }
 
-  if (!isDead && !spawnProtection && bumpTimer <= 0) {
+  if (!isDead && bumpTimer <= 0) {
     const { bumpResist } = VEHICLE_STATS[vType];
     for (const obs of this.obstacleSprites) {
       const dx = this.playerBody.x - obs.x;
