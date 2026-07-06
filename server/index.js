@@ -420,7 +420,7 @@ wss.on("connection", (ws) => {
         broadcast({ type: "powerupCollected", id: data.id });
         console.log(sessionId, "collected powerup", data.id);
         const p = rooms[sessionId];
-        if (p && !p.heldItem) {
+        if (p && !p.heldItem && !p.dead && !p.hasFinished) {
           const sorted = Object.entries(rooms).sort(([, a], [, b]) => {
             if (b.currentCheckpoint !== a.currentCheckpoint) return b.currentCheckpoint - a.currentCheckpoint;
             return b.trackDistance - a.trackDistance;
@@ -605,7 +605,7 @@ function endRound() {
 function resetRoundState(startNew) {
   if (finishGraceTimeout) { clearTimeout(finishGraceTimeout); finishGraceTimeout = null; }
   checkpointArrivalCounts = [0, 0, 0, 0, 0];
-  for (let i = 0; i < 12; i++) powerupState[i] = { collected: false };
+  for (let i = 0; i < 15; i++) powerupState[i] = { collected: false };
   broadcast({ type: "powerupsReset" });
   Object.entries(rooms).forEach(([id, p]) => {
     p.currentCheckpoint = 0;
