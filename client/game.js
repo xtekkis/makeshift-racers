@@ -83,7 +83,7 @@ const OBSTACLE_SCALES = {
 const FINISH_ZONE_X = 1800;
 const FINISH_ZONE_Y = 3600;
 const FINISH_ZONE_RADIUS = 450;
-const OBSTACLE_MIN_DIST = 220;
+const OBSTACLE_MIN_EDGE_GAP = 60;
 
 const OBSTACLE_RADII = {
   'barrel_red':    18,
@@ -658,13 +658,15 @@ window.setCoins = (n) => {
 };
 window.setHeldItem = (item) => { myHeldItem = item; updateItemHUD(); };
 
-function checkPlacementValid(scene, x, y) {
+function checkPlacementValid(scene, x, y, type) {
   if (scene.track.isOffTrack(x, y)) return false;
   const fdx = x - FINISH_ZONE_X, fdy = y - FINISH_ZONE_Y;
   if (fdx * fdx + fdy * fdy < FINISH_ZONE_RADIUS * FINISH_ZONE_RADIUS) return false;
+  const newR = OBSTACLE_RADII[type] || 30;
   for (const obs of scene._placedObstacles) {
     const dx = x - obs.x, dy = y - obs.y;
-    if (dx * dx + dy * dy < OBSTACLE_MIN_DIST * OBSTACLE_MIN_DIST) return false;
+    const minDist = newR + (OBSTACLE_RADII[obs.type] || 30) + OBSTACLE_MIN_EDGE_GAP;
+    if (dx * dx + dy * dy < minDist * minDist) return false;
   }
   return true;
 }
@@ -718,7 +720,7 @@ window.enterPlacementPhase = function(timeLimit, menuItems) {
       const canvasY = (cy - rect.top) * scaleY;
       const wp = scene.cameras.main.getWorldPoint(canvasX, canvasY);
       scene._ghostSprite.setPosition(wp.x, wp.y);
-      const valid = checkPlacementValid(scene, wp.x, wp.y);
+      const valid = checkPlacementValid(scene, wp.x, wp.y, scene._selectedObstacleType);
       scene._placementValid = valid;
       scene._ghostSprite.setTint(valid ? 0xffffff : 0xff4444);
       const now = Date.now();
@@ -735,7 +737,7 @@ window.enterPlacementPhase = function(timeLimit, menuItems) {
         if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) return;
       }
       scene._obstaclePlaced = true;
-      const valid = checkPlacementValid(scene, scene._ghostSprite.x, scene._ghostSprite.y);
+      const valid = checkPlacementValid(scene, scene._ghostSprite.x, scene._ghostSprite.y, scene._selectedObstacleType);
       scene._placementValid = valid;
       scene._ghostSprite.setTint(valid ? 0xffffff : 0xff4444);
       sendGhostMove(scene._selectedObstacleType, scene._ghostSprite.x, scene._ghostSprite.y, scene._obstacleRotation || 0);
@@ -920,7 +922,7 @@ window.selectObstacle = function(type) {
   scene._ghostSprite.setScale(OBSTACLE_SCALES[type] || 0.5);
   scene._ghostSprite.setDepth(3);
   scene._ghostSprite.setAngle(0);
-  const initValid = checkPlacementValid(scene, wp.x, wp.y);
+  const initValid = checkPlacementValid(scene, wp.x, wp.y, type);
   scene._placementValid = initValid;
   scene._ghostSprite.setTint(initValid ? 0xffffff : 0xff4444);
 
