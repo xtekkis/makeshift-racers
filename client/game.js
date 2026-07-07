@@ -198,6 +198,7 @@ function create() {
     coin:      this.sound.add('snd_coin',      { volume: 0.65 }),
     countdown: this.sound.add('snd_countdown', { volume: 0.9 }),
   };
+  this.sound.volume = parseFloat(localStorage.getItem('soundVolume') ?? '0.5');
 
   ['item-hud', 'coin-hud', 'position-hud'].forEach(id => {
     const el = document.getElementById(id);

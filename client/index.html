@@ -611,6 +611,49 @@
       cursor: not-allowed;
       opacity: 0.6;
     }
+
+    #volume-control {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    #volume-label {
+      font-size: 12px;
+      color: #aaa;
+      letter-spacing: 1px;
+    }
+
+    #volumeSlider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 160px;
+      height: 4px;
+      border-radius: 2px;
+      background: #444;
+      outline: none;
+      cursor: pointer;
+    }
+
+    #volumeSlider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #4a8fe8;
+      cursor: pointer;
+    }
+
+    #volumeSlider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #4a8fe8;
+      cursor: pointer;
+      border: none;
+    }
   </style>
 </head>
 
@@ -645,6 +688,10 @@
       </div>
       <input type="text" id="nameInput" placeholder="Enter name" maxlength="12" />
       <button id="readyBtn">Ready</button>
+      <div id="volume-control">
+        <span id="volume-label">VOLUME — 50%</span>
+        <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="0.5">
+      </div>
     </div>
 
     <div class="players-grid">
@@ -825,6 +872,18 @@
       if (window.lobbySocket) {
         window.lobbySocket.send(JSON.stringify({ type: 'lobbyUpdate', color: selectedColor, name, ready: isReady, vehicleType: selectedVehicleType }));
       }
+    });
+
+    const volumeSlider = document.getElementById('volumeSlider');
+    const volumeLabel = document.getElementById('volume-label');
+    const savedVolume = parseFloat(localStorage.getItem('soundVolume') ?? '0.5');
+    volumeSlider.value = savedVolume;
+    volumeLabel.textContent = 'VOLUME — ' + Math.round(savedVolume * 100) + '%';
+    volumeSlider.addEventListener('input', () => {
+      const v = parseFloat(volumeSlider.value);
+      volumeLabel.textContent = 'VOLUME — ' + Math.round(v * 100) + '%';
+      localStorage.setItem('soundVolume', v);
+      if (window.gameScene) window.gameScene.sound.volume = v;
     });
 
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
