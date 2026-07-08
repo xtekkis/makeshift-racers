@@ -295,6 +295,7 @@ wss.on("connection", (ws) => {
         const justDied = !player.wasDead && (data.dead || false);
         if (justDied) {
           player.coins = 0;
+          player.heldItem = null;
           ws.send(JSON.stringify({ type: "coinUpdate", coins: 0 }));
           checkAllFinished();
         }
