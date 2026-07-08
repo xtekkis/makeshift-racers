@@ -289,6 +289,9 @@ function update(time, delta) {
     window.iFinished = false;
     updateCoinHUD();
     updateItemHUD();
+    if (this.sounds && !this.sounds.engine.isPlaying && !window.movementLocked) {
+      this.sounds.engine.play();
+    }
   }
 
   if (window.inPlacementPhase) {
