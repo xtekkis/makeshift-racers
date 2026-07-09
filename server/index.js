@@ -617,6 +617,7 @@ function resetRoundState(startNew) {
     p.wasDead = false;
     p.heldItem = null;
     p.hasFinished = false;
+    p.coins = 0;
     const pos = startPositions[p.playerNumber];
     const td = getTrackDistance(pos.x, pos.y, TRACK_PATH, 0);
     p.x = pos.x;
