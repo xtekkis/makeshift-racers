@@ -133,7 +133,7 @@ function connectToServer(playerName) {
       if (window.markObstacleUsed) window.markObstacleUsed(data.obstacle.type);
       const sc = window.gameScene;
       if (sc && sc._placedObstacles) sc._placedObstacles.push({ x: data.obstacle.x, y: data.obstacle.y, type: data.obstacle.type });
-      if (window.lockPlayerObstacle) window.lockPlayerObstacle(data.obstacle.sessionId, data.obstacle);
+      if (window.lockPlayerObstacle) window.lockPlayerObstacle(data.obstacle.placedBy, data.obstacle);
     }
 
     if (data.type === "playerGhostMove") {
