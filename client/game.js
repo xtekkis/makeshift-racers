@@ -855,7 +855,11 @@ window.exitPlacementPhase = function() {
   if (confirmBtn) confirmBtn.disabled = false;
 
   if (player) player.setVisible(true);
-  if (scene) scene.playerLabel.setVisible(true);
+  if (scene) {
+    scene.playerLabel.setVisible(true);
+    Object.values(scene.otherPlayers).forEach(s => s.setVisible(true));
+    if (scene.otherPlayerLabels) Object.values(scene.otherPlayerLabels).forEach(l => l.setVisible(true));
+  }
 };
 
 window.renderObstacles = function(obstacleList) {
