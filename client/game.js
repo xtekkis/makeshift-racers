@@ -378,6 +378,19 @@ function update(time, delta) {
     const scrollY = Math.max(0, Math.min(leaderY - vpHalfH + camOffsetY, 5000 - vpH));
     this.cameras.main.setScroll(scrollX, scrollY);
 
+    if (this.skidGfx && !spawnProtection) {
+      const perpRad = Phaser.Math.DegToRad(this.playerAngle + 90);
+      const offset = SKID_OFFSETS[vType] || 10;
+      const lx = this.playerBody.x + Math.cos(perpRad) * offset;
+      const ly = this.playerBody.y + Math.sin(perpRad) * offset;
+      const rx = this.playerBody.x - Math.cos(perpRad) * offset;
+      const ry = this.playerBody.y - Math.sin(perpRad) * offset;
+      this.skidGfx.fillStyle(0x111111, 0.35);
+      this.skidGfx.fillCircle(lx, ly, 2);
+      this.skidGfx.fillCircle(rx, ry, 2);
+      this._skidCount += 2;
+      if (this._skidCount >= SKID_MAX_DOTS) { this.skidGfx.clear(); this._skidCount = 0; }
+    }
     if (window.playerPositioned) sendMove(this.playerBody.x, this.playerBody.y, this.playerAngle, false);
     return;
   }
@@ -530,7 +543,7 @@ function update(time, delta) {
     const _dp = window.dpad || {};
     const isTurning = cursors.left.isDown || this.wasd.left.isDown || _dp.left ||
                       cursors.right.isDown || this.wasd.right.isDown || _dp.right;
-    if ((isTurning && this.playerSpeed > SKID_SPEED_THRESHOLD) || bumpTimer > 0) {
+    if (isTurning && this.playerSpeed > SKID_SPEED_THRESHOLD) {
       const perpRad = Phaser.Math.DegToRad(this.playerAngle + 90);
       const offset = SKID_OFFSETS[vType] || 10;
       const lx = this.playerBody.x + Math.cos(perpRad) * offset;
