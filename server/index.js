@@ -115,7 +115,7 @@ const powerupState = {};
 const lobbySlots = [null, null, null, null];
 let lobbyPlayerMap = {};
 
-for (let i = 0; i < 15; i++) {
+for (let i = 0; i < 12; i++) {
   powerupState[i] = { collected: false };
 }
 
@@ -606,7 +606,7 @@ function endRound() {
 function resetRoundState(startNew) {
   if (finishGraceTimeout) { clearTimeout(finishGraceTimeout); finishGraceTimeout = null; }
   checkpointArrivalCounts = [0, 0, 0, 0, 0];
-  for (let i = 0; i < 15; i++) powerupState[i] = { collected: false };
+  for (let i = 0; i < 12; i++) powerupState[i] = { collected: false };
   broadcast({ type: "powerupsReset" });
   Object.entries(rooms).forEach(([id, p]) => {
     p.currentCheckpoint = 0;
