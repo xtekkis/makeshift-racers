@@ -38,7 +38,7 @@ class PowerUps {
         Object.entries(this.powerups).forEach(([id, pu]) => {
             if (pu.collected) return;
             const dist = Math.hypot(playerX - pu.x, playerY - pu.y);
-            if (dist < 30) {
+            if (dist < 20) {
                 this.collect(parseInt(id));
             }
         });
