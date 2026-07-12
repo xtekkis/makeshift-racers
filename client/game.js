@@ -385,7 +385,7 @@ function update(time, delta) {
 
     if (this.skidGfx && !spawnProtection) {
       const perpRad = Phaser.Math.DegToRad(this.playerAngle + 90);
-      const offset = SKID_OFFSETS[vType] || 10;
+      const offset = SKID_OFFSETS[vType] ?? 10;
       const lx = this.playerBody.x + Math.cos(perpRad) * offset;
       const ly = this.playerBody.y + Math.sin(perpRad) * offset;
       const rx = this.playerBody.x - Math.cos(perpRad) * offset;
@@ -550,7 +550,7 @@ function update(time, delta) {
                       cursors.right.isDown || this.wasd.right.isDown || _dp.right;
     if (isTurning && this.playerSpeed > SKID_SPEED_THRESHOLD) {
       const perpRad = Phaser.Math.DegToRad(this.playerAngle + 90);
-      const offset = SKID_OFFSETS[vType] || 10;
+      const offset = SKID_OFFSETS[vType] ?? 10;
       const lx = this.playerBody.x + Math.cos(perpRad) * offset;
       const ly = this.playerBody.y + Math.sin(perpRad) * offset;
       const rx = this.playerBody.x - Math.cos(perpRad) * offset;
