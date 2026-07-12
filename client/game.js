@@ -53,7 +53,7 @@ let wrenchTimer = 0;
 const WRENCH_DURATION = 3000;
 
 const SKID_SPEED_THRESHOLD = 180;
-const SKID_OFFSETS = { f1: 7, car: 13, truck: 20 };
+const SKID_OFFSETS = { f1: 7, car: 13, truck: 20, moto: 0 };
 const SKID_MAX_DOTS = 1200;
 
 const MAX_SPEED = 400;
@@ -101,7 +101,7 @@ const VEHICLE_STATS = {
   f1:    { turnSpeed: 2.2, scaleX: 0.1,  scaleY: 0.1,  accel: 6, angleOffset: -90, hitL: 12, hitW: 10, maxSpeed: 450, wrenchMult: 0.30, bumpResist: 1.0 },
   car:   { turnSpeed: 1.8, scaleX: 0.44, scaleY: 0.32, accel: 7, angleOffset:  90, hitL: 28, hitW: 18, maxSpeed: 400, wrenchMult: 0.30, bumpResist: 1.0 },
   truck: { turnSpeed: 2.0, scaleX: 0.75, scaleY: 0.4,  accel: 5, angleOffset:  90, hitL: 40, hitW: 30, maxSpeed: 400, wrenchMult: 0.50, bumpResist: 0.4 },
-  moto:  { turnSpeed: 2.4, scaleX: 0.45, scaleY: 0.85, accel: 8, angleOffset: -90, hitL: 14, hitW: 6,  maxSpeed: 480, wrenchMult: 0.30, bumpResist: 1.4 },
+  moto:  { turnSpeed: 2.4, scaleX: 0.45, scaleY: 0.85, accel: 8, angleOffset: 90,  hitL: 14, hitW: 6,  maxSpeed: 480, wrenchMult: 0.30, bumpResist: 1.4 },
 };
 
 function obbOverlap(ax, ay, aAngle, aHitL, aHitW, bx, by, bHitL, bHitW) {
