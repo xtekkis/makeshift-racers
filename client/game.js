@@ -101,6 +101,7 @@ const VEHICLE_STATS = {
   f1:    { turnSpeed: 2.2, scaleX: 0.1,  scaleY: 0.1,  accel: 6, angleOffset: -90, hitL: 12, hitW: 10, maxSpeed: 450, wrenchMult: 0.30, bumpResist: 1.0 },
   car:   { turnSpeed: 1.8, scaleX: 0.44, scaleY: 0.32, accel: 7, angleOffset:  90, hitL: 28, hitW: 18, maxSpeed: 400, wrenchMult: 0.30, bumpResist: 1.0 },
   truck: { turnSpeed: 2.0, scaleX: 0.75, scaleY: 0.4,  accel: 5, angleOffset:  90, hitL: 40, hitW: 30, maxSpeed: 400, wrenchMult: 0.50, bumpResist: 0.4 },
+  moto:  { turnSpeed: 2.4, scaleX: 0.45, scaleY: 0.85, accel: 8, angleOffset: -90, hitL: 14, hitW: 6,  maxSpeed: 480, wrenchMult: 0.30, bumpResist: 1.4 },
 };
 
 function obbOverlap(ax, ay, aAngle, aHitL, aHitW, bx, by, bHitL, bHitW) {
@@ -114,6 +115,7 @@ function obbOverlap(ax, ay, aAngle, aHitL, aHitW, bx, by, bHitL, bHitW) {
 
 function getVehicleTexKey(vType, carIndex, turning) {
   if (vType === 'truck') return 'truck_0';
+  if (vType === 'moto') return 'moto_' + (carIndex % 4);
   if (turning) return vType + '_' + carIndex + turning;
   return vType + '_' + carIndex;
 }
@@ -126,6 +128,9 @@ function preload() {
     this.load.image('car_' + i,          'assets/car_' + i + '.png');
   }
   this.load.image('truck_0', 'assets/truck_0.png');
+  for (let i = 0; i < 4; i++) {
+    this.load.image('moto_' + i, 'assets/moto_' + i + '.png');
+  }
   ALL_OBSTACLE_TYPES.forEach(t => {
     this.load.image(t, 'assets/obstacles/' + t + '.png');
   });
