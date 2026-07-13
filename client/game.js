@@ -56,6 +56,15 @@ const SKID_SPEED_THRESHOLD = 180;
 const SKID_OFFSETS = { f1: 7, car: 13, truck: 20, moto: 0 };
 const SKID_MAX_DOTS = 1200;
 
+const MINIMAP_W = 170;
+const MINIMAP_H = 125;
+const MINIMAP_MARGIN = 16;
+// Same full-map center/extent used by the placement-phase camera zoom-out.
+const MINIMAP_CENTER_X = 2000;
+const MINIMAP_CENTER_Y = 2600;
+const MINIMAP_VIEW_W = 3400;
+const MINIMAP_VIEW_H = 2500;
+
 const MAX_SPEED = 400;
 const MAX_REVERSE = 180;
 const ACCEL = 6;
@@ -111,6 +120,15 @@ function obbOverlap(ax, ay, aAngle, aHitL, aHitW, bx, by, bHitL, bHitW) {
   const localX = dx * Math.cos(rad) - dy * Math.sin(rad);
   const localY = dx * Math.sin(rad) + dy * Math.cos(rad);
   return Math.abs(localX) < aHitL + bHitL && Math.abs(localY) < aHitW + bHitW;
+}
+
+function worldToMinimap(scene, x, y) {
+  const scaleX = MINIMAP_W / MINIMAP_VIEW_W;
+  const scaleY = MINIMAP_H / MINIMAP_VIEW_H;
+  return {
+    x: scene.minimapBoxX + MINIMAP_W / 2 + (x - MINIMAP_CENTER_X) * scaleX,
+    y: scene.minimapBoxY + MINIMAP_H / 2 + (y - MINIMAP_CENTER_Y) * scaleY,
+  };
 }
 
 function getVehicleTexKey(vType, carIndex, turning) {
@@ -194,6 +212,26 @@ function create() {
   this.skidGfx = this.add.graphics();
   this.skidGfx.setDepth(0.4);
   this._skidCount = 0;
+
+  this.minimapBoxX = GAME_W - MINIMAP_MARGIN - MINIMAP_W;
+  this.minimapBoxY = MINIMAP_MARGIN;
+  this.minimapBg = this.add.graphics();
+  this.minimapBg.setScrollFactor(0);
+  this.minimapBg.setDepth(50);
+  this.minimapBg.fillStyle(0x000000, 0.55);
+  this.minimapBg.fillRect(this.minimapBoxX, this.minimapBoxY, MINIMAP_W, MINIMAP_H);
+  this.minimapBg.lineStyle(2, 0xffffff, 0.35);
+  this.minimapBg.strokeRect(this.minimapBoxX, this.minimapBoxY, MINIMAP_W, MINIMAP_H);
+  this.minimapBg.lineStyle(2, 0x888888, 0.9);
+  this.minimapBg.beginPath();
+  const trackPath = this.track.path;
+  const mp0 = worldToMinimap(this, trackPath[0].x, trackPath[0].y);
+  this.minimapBg.moveTo(mp0.x, mp0.y);
+  for (let i = 1; i < trackPath.length; i++) {
+    const mp = worldToMinimap(this, trackPath[i].x, trackPath[i].y);
+    this.minimapBg.lineTo(mp.x, mp.y);
+  }
+  this.minimapBg.strokePath();
 
   this.sounds = {
     engine:    this.sound.add('snd_engine',    { loop: true, volume: 0.45 }),
@@ -703,6 +741,7 @@ window.enterPlacementPhase = function(timeLimit, menuItems) {
     scene.playerLabel.setVisible(false);
     Object.values(scene.otherPlayers).forEach(s => s.setVisible(false));
     if (scene.otherPlayerLabels) Object.values(scene.otherPlayerLabels).forEach(l => l.setVisible(false));
+    if (scene.minimapBg) scene.minimapBg.setVisible(false);
 
     const pZoom = Math.min(GAME_W / 3400, GAME_H / 2500);
     const pScrollX = 2000 - GAME_W / 2;
@@ -864,6 +903,7 @@ window.exitPlacementPhase = function() {
     scene.playerLabel.setVisible(true);
     Object.values(scene.otherPlayers).forEach(s => s.setVisible(true));
     if (scene.otherPlayerLabels) Object.values(scene.otherPlayerLabels).forEach(l => l.setVisible(true));
+    if (scene.minimapBg) scene.minimapBg.setVisible(true);
   }
 };
 
