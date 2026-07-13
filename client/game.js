@@ -131,6 +131,22 @@ function worldToMinimap(scene, x, y) {
   };
 }
 
+function updateMinimapDots(scene, players, myId) {
+  if (!scene.minimapDots) return;
+  scene.minimapDots.clear();
+
+  Object.entries(players).forEach(([id, p]) => {
+    if (p.dead) return;
+    const isMe = id === myId;
+    const wx = isMe ? scene.playerBody.x : p.x;
+    const wy = isMe ? scene.playerBody.y : p.y;
+    const pos = worldToMinimap(scene, wx, wy);
+    const color = isMe ? 0xffffff : ((window.HEX_COLORS ? window.HEX_COLORS[p.colorIndex] : undefined) ?? 0xff8844);
+    scene.minimapDots.fillStyle(color, 1);
+    scene.minimapDots.fillCircle(pos.x, pos.y, isMe ? 4 : 3);
+  });
+}
+
 function getVehicleTexKey(vType, carIndex, turning) {
   if (vType === 'truck') return 'truck_0';
   if (vType === 'moto') return 'moto_' + (carIndex % 4);
@@ -232,6 +248,10 @@ function create() {
     this.minimapBg.lineTo(mp.x, mp.y);
   }
   this.minimapBg.strokePath();
+
+  this.minimapDots = this.add.graphics();
+  this.minimapDots.setScrollFactor(0);
+  this.minimapDots.setDepth(51);
 
   this.sounds = {
     engine:    this.sound.add('snd_engine',    { loop: true, volume: 0.45 }),
@@ -389,6 +409,7 @@ function update(time, delta) {
 
     if (window.lastPlayers) {
       this.indicators.update(window.lastPlayers, mySessionId);
+      updateMinimapDots(this, window.lastPlayers, mySessionId);
     }
 
     if (window.playerPositioned) sendMove(this.playerBody.x, this.playerBody.y, this.playerAngle, true);
@@ -614,6 +635,7 @@ function update(time, delta) {
 
   if (window.lastPlayers) {
     this.indicators.update(window.lastPlayers, mySessionId);
+    updateMinimapDots(this, window.lastPlayers, mySessionId);
     const myData = window.lastPlayers[mySessionId];
     if (myData) {
       const myScore = myData.currentCheckpoint * 100000 + (myData.trackDistance || 0);
@@ -742,6 +764,7 @@ window.enterPlacementPhase = function(timeLimit, menuItems) {
     Object.values(scene.otherPlayers).forEach(s => s.setVisible(false));
     if (scene.otherPlayerLabels) Object.values(scene.otherPlayerLabels).forEach(l => l.setVisible(false));
     if (scene.minimapBg) scene.minimapBg.setVisible(false);
+    if (scene.minimapDots) scene.minimapDots.setVisible(false);
 
     const pZoom = Math.min(GAME_W / 3400, GAME_H / 2500);
     const pScrollX = 2000 - GAME_W / 2;
@@ -904,6 +927,7 @@ window.exitPlacementPhase = function() {
     Object.values(scene.otherPlayers).forEach(s => s.setVisible(true));
     if (scene.otherPlayerLabels) Object.values(scene.otherPlayerLabels).forEach(l => l.setVisible(true));
     if (scene.minimapBg) scene.minimapBg.setVisible(true);
+    if (scene.minimapDots) scene.minimapDots.setVisible(true);
   }
 };
 
