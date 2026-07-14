@@ -549,7 +549,7 @@ function checkAllFinished() {
     finishGraceTimeout = setTimeout(() => {
       finishGraceTimeout = null;
       if (roundActive) endRound();
-    }, 3000);
+    }, 5000);
   }
 }
 
