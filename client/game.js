@@ -70,6 +70,7 @@ const MAX_REVERSE = 180;
 const ACCEL = 6;
 const DECEL_RELEASE = 4;
 const DECEL_BRAKE = 24;
+const FINISH_STOP_FRAMES = 112.5; // frames to decelerate from a vehicle's maxSpeed to 0 at the finish line
 const DEATH_DURATION = 2000;
 const COLLISION_MIN_SPEED = 80;
 const CAM_LERP = 0.05;
@@ -579,8 +580,9 @@ function update(time, delta) {
 
   if (window.iFinished) {
     const dt = delta / FRAME_MS;
+    const finishDecelRate = VEHICLE_STATS[vType].maxSpeed / FINISH_STOP_FRAMES;
     if (this.playerSpeed > 0) {
-      this.playerSpeed -= DECEL_RELEASE * dt;
+      this.playerSpeed -= finishDecelRate * dt;
       if (this.playerSpeed < 0) this.playerSpeed = 0;
     }
   }
