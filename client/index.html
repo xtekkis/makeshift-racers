@@ -256,6 +256,30 @@
       gap: 32px;
     }
 
+    #connection-lost-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.92);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 300;
+      color: white;
+      gap: 12px;
+      text-align: center;
+    }
+
+    #connection-lost-overlay h2 {
+      font-size: 28px;
+      color: #e84a4a;
+    }
+
+    #connection-lost-overlay p {
+      font-size: 15px;
+      color: #aaa;
+    }
+
     #scoreboard-title {
       font-size: 32px;
       font-weight: bold;
@@ -776,6 +800,11 @@
     </div>
   </div>
 
+  <div id="connection-lost-overlay">
+    <h2>Connection Lost</h2>
+    <p>Please refresh the page to reconnect.</p>
+  </div>
+
   <script>
     const COLORS = ['#e8c14a', '#4a8fe8', '#4ae87a', '#e84a4a', '#9b4ae8', '#e8874a', '#e84a9b', '#4ae8e8'];
     const HEX_COLORS = [0xe8c14a, 0x4a8fe8, 0x4ae87a, 0xe84a4a, 0x9b4ae8, 0xe8874a, 0xe84a9b, 0x4ae8e8];
@@ -893,6 +922,13 @@
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
     const lobbySocket = new WebSocket(protocol + '//' + location.host);
     window.lobbySocket = lobbySocket;
+
+    function showConnectionLost() {
+      const overlay = document.getElementById('connection-lost-overlay');
+      if (overlay) overlay.style.display = 'flex';
+    }
+    lobbySocket.onclose = showConnectionLost;
+    lobbySocket.onerror = showConnectionLost;
 
     lobbySocket.onopen = () => {
       lobbySocket.send(JSON.stringify({ type: 'lobbyJoin' }));
