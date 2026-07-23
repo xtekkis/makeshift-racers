@@ -12,9 +12,6 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@colyseus/core": "^0.17.43",
-    "@colyseus/schema": "^4.0.26",
-    "colyseus": "^0.14.18",
     "ws": "^8.21.0"
   }
 }

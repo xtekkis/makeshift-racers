@@ -11,7 +11,6 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "colyseus.js": "^0.14.13",
     "phaser": "^4.1.0"
   }
 }
