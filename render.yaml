@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: makeshift-racers
+    env: node
+    plan: free
+    buildCommand: cd server && npm install && cd ../client && npm install
+    startCommand: node server/index.js

@@ -2,7 +2,7 @@ const WebSocket = require("ws");
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 const CLIENT_DIR = path.join(__dirname, '..', 'client');
 const MIME = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.png': 'image/png' };
