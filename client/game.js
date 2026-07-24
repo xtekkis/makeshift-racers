@@ -277,13 +277,18 @@ function create() {
   connectToServer(window.playerName || "Player");
 }
 
+const CAM_LOOKAHEAD_RATIO_X = 300 / 640; // tuned at desktop's 1280x720 canvas, zoom 1
+const CAM_LOOKAHEAD_RATIO_Y = 160 / 360;
+
 function getTargetOffset(direction) {
+  const offX = vpHalfW * CAM_LOOKAHEAD_RATIO_X;
+  const offY = vpHalfH * CAM_LOOKAHEAD_RATIO_Y;
   switch (direction) {
-    case 'left': return { x: 300, y: 0 };
-    case 'right': return { x: -300, y: 0 };
-    case 'up': return { x: 0, y: 160 };
-    case 'down': return { x: 0, y: -160 };
-    default: return { x: 300, y: 0 };
+    case 'left': return { x: offX, y: 0 };
+    case 'right': return { x: -offX, y: 0 };
+    case 'up': return { x: 0, y: offY };
+    case 'down': return { x: 0, y: -offY };
+    default: return { x: offX, y: 0 };
   }
 }
 

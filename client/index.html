@@ -222,6 +222,7 @@
 
     #game {
       display: none;
+      touch-action: none;
     }
 
     #countdown-overlay {
@@ -278,6 +279,36 @@
     #connection-lost-overlay p {
       font-size: 15px;
       color: #aaa;
+    }
+
+    #rotate-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 400;
+      background: #0d0d1a;
+      color: white;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 12px;
+      padding: 24px;
+    }
+
+    #rotate-overlay h2 {
+      font-size: 22px;
+    }
+
+    #rotate-overlay p {
+      font-size: 14px;
+      color: #aaa;
+    }
+
+    @media (pointer: coarse) and (orientation: portrait) {
+      #rotate-overlay {
+        display: flex;
+      }
     }
 
     #scoreboard-title {
@@ -803,6 +834,11 @@
   <div id="connection-lost-overlay">
     <h2>Connection Lost</h2>
     <p>Please refresh the page to reconnect.</p>
+  </div>
+
+  <div id="rotate-overlay">
+    <h2>Rotate your device</h2>
+    <p>This game is played in landscape mode. Turn your phone sideways to continue.</p>
   </div>
 
   <script>
