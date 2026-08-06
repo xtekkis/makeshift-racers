@@ -56,14 +56,21 @@ const SKID_SPEED_THRESHOLD = 180;
 const SKID_OFFSETS = { f1: 7, car: 13, truck: 20, moto: 0 };
 const SKID_MAX_DOTS = 1200;
 
+// Minimap configuration
 const MINIMAP_W = 170;
 const MINIMAP_H = 125;
 const MINIMAP_MARGIN = 16;
-// Same full-map center/extent used by the placement-phase camera zoom-out.
 const MINIMAP_CENTER_X = 2000;
 const MINIMAP_CENTER_Y = 2600;
 const MINIMAP_VIEW_W = 3400;
 const MINIMAP_VIEW_H = 2500;
+
+function getMinimapScale() {
+  return {
+    scaleX: MINIMAP_W / MINIMAP_VIEW_W,
+    scaleY: MINIMAP_H / MINIMAP_VIEW_H,
+  };
+}
 
 const MAX_SPEED = 400;
 const MAX_REVERSE = 180;
@@ -124,8 +131,7 @@ function obbOverlap(ax, ay, aAngle, aHitL, aHitW, bx, by, bHitL, bHitW) {
 }
 
 function worldToMinimap(scene, x, y) {
-  const scaleX = MINIMAP_W / MINIMAP_VIEW_W;
-  const scaleY = MINIMAP_H / MINIMAP_VIEW_H;
+  const { scaleX, scaleY } = getMinimapScale();
   return {
     x: scene.minimapBoxX + MINIMAP_W / 2 + (x - MINIMAP_CENTER_X) * scaleX,
     y: scene.minimapBoxY + MINIMAP_H / 2 + (y - MINIMAP_CENTER_Y) * scaleY,
