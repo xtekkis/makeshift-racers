@@ -86,15 +86,15 @@ const NUM_CAR_VARIANTS = 8;
 
 const ALL_OBSTACLE_TYPES = ['barrel_red', 'barrier_red', 'barrier_white', 'cone', 'rock_small', 'rock_medium', 'rock_large', 'bush_large', 'bush_small'];
 const OBSTACLE_SCALES = {
-  'barrel_red':    0.35,
-  'barrier_red':   0.5,
+  'barrel_red': 0.35,
+  'barrier_red': 0.5,
   'barrier_white': 0.5,
   'cone': 0.3,
-  'rock_small':    0.4,
-  'rock_medium':   0.5,
-  'rock_large':    0.6,
-  'bush_large':    0.6,
-  'bush_small':    0.45,
+  'rock_small': 0.4,
+  'rock_medium': 0.5,
+  'rock_large': 0.6,
+  'bush_large': 0.6,
+  'bush_small': 0.45,
 };
 
 const FINISH_ZONE_X = 1800;
@@ -103,22 +103,22 @@ const FINISH_ZONE_RADIUS = 450;
 const OBSTACLE_MIN_EDGE_GAP = 60;
 
 const OBSTACLE_RADII = {
-  'barrel_red':    18,
-  'barrier_red':   45,
+  'barrel_red': 18,
+  'barrier_red': 45,
   'barrier_white': 45,
-  'cone':          12,
-  'rock_small':    22,
-  'rock_medium':   35,
-  'rock_large':    48,
-  'bush_large':    45,
-  'bush_small':    28,
+  'cone': 12,
+  'rock_small': 22,
+  'rock_medium': 35,
+  'rock_large': 48,
+  'bush_large': 45,
+  'bush_small': 28,
 };
 
 const VEHICLE_STATS = {
-  f1:    { turnSpeed: 2.2, scaleX: 0.1,  scaleY: 0.1,  accel: 6, angleOffset: -90, hitL: 12, hitW: 10, maxSpeed: 450, wrenchMult: 0.30, bumpResist: 1.0 },
-  car:   { turnSpeed: 1.8, scaleX: 0.44, scaleY: 0.32, accel: 7, angleOffset:  90, hitL: 28, hitW: 18, maxSpeed: 400, wrenchMult: 0.30, bumpResist: 1.0 },
-  truck: { turnSpeed: 2.0, scaleX: 0.75, scaleY: 0.4,  accel: 5, angleOffset:  90, hitL: 40, hitW: 30, maxSpeed: 400, wrenchMult: 0.50, bumpResist: 0.4 },
-  moto:  { turnSpeed: 2.4, scaleX: 0.45, scaleY: 0.85, accel: 8, angleOffset: 90,  hitL: 14, hitW: 6,  maxSpeed: 480, wrenchMult: 0.30, bumpResist: 1.4 },
+  f1: { turnSpeed: 2.2, scaleX: 0.1, scaleY: 0.1, accel: 6, angleOffset: -90, hitL: 12, hitW: 10, maxSpeed: 450, wrenchMult: 0.30, bumpResist: 1.0 },
+  car: { turnSpeed: 1.8, scaleX: 0.44, scaleY: 0.32, accel: 7, angleOffset: 90, hitL: 28, hitW: 18, maxSpeed: 400, wrenchMult: 0.30, bumpResist: 1.0 },
+  truck: { turnSpeed: 2.0, scaleX: 0.75, scaleY: 0.4, accel: 5, angleOffset: 90, hitL: 40, hitW: 30, maxSpeed: 400, wrenchMult: 0.50, bumpResist: 0.4 },
+  moto: { turnSpeed: 2.4, scaleX: 0.45, scaleY: 0.85, accel: 8, angleOffset: 90, hitL: 14, hitW: 6, maxSpeed: 480, wrenchMult: 0.30, bumpResist: 1.4 },
 };
 
 function obbOverlap(ax, ay, aAngle, aHitL, aHitW, bx, by, bHitL, bHitW) {
@@ -173,10 +173,10 @@ function getVehicleTexKey(vType, carIndex, turning) {
 
 function preload() {
   for (let i = 0; i < NUM_CAR_VARIANTS; i++) {
-    this.load.image('f1_' + i,           'assets/f1_' + i + '.png');
+    this.load.image('f1_' + i, 'assets/f1_' + i + '.png');
     this.load.image('f1_' + i + '_left', 'assets/f1_' + i + '_left.png');
-    this.load.image('f1_' + i + '_right','assets/f1_' + i + '_right.png');
-    this.load.image('car_' + i,          'assets/car_' + i + '.png');
+    this.load.image('f1_' + i + '_right', 'assets/f1_' + i + '_right.png');
+    this.load.image('car_' + i, 'assets/car_' + i + '.png');
   }
   this.load.image('truck_0', 'assets/truck_0.png');
   for (let i = 0; i < 4; i++) {
@@ -185,11 +185,11 @@ function preload() {
   ALL_OBSTACLE_TYPES.forEach(t => {
     this.load.image(t, 'assets/obstacles/' + t + '.png');
   });
-  this.load.audio('snd_engine',    'assets/sounds/engine_loop.wav');
-  this.load.audio('snd_bounce',    'assets/sounds/bounce.ogg');
-  this.load.audio('snd_pickup',    'assets/sounds/pickup.ogg');
-  this.load.audio('snd_death',     'assets/sounds/death.mp3');
-  this.load.audio('snd_coin',      'assets/sounds/coin.ogg');
+  this.load.audio('snd_engine', 'assets/sounds/engine_loop.wav');
+  this.load.audio('snd_bounce', 'assets/sounds/bounce.ogg');
+  this.load.audio('snd_pickup', 'assets/sounds/pickup.ogg');
+  this.load.audio('snd_death', 'assets/sounds/death.mp3');
+  this.load.audio('snd_coin', 'assets/sounds/coin.ogg');
   this.load.audio('snd_countdown', 'assets/sounds/countdown.wav');
 }
 
@@ -271,11 +271,11 @@ function create() {
   this.minimapDots.setDepth(51);
 
   this.sounds = {
-    engine:    this.sound.add('snd_engine',    { loop: true, volume: 0.45 }),
-    bounce:    this.sound.add('snd_bounce',    { volume: 0.8 }),
-    pickup:    this.sound.add('snd_pickup',    { volume: 0.8 }),
-    death:     this.sound.add('snd_death',     { volume: 1.0 }),
-    coin:      this.sound.add('snd_coin',      { volume: 0.65 }),
+    engine: this.sound.add('snd_engine', { loop: true, volume: 0.45 }),
+    bounce: this.sound.add('snd_bounce', { volume: 0.8 }),
+    pickup: this.sound.add('snd_pickup', { volume: 0.8 }),
+    death: this.sound.add('snd_death', { volume: 1.0 }),
+    coin: this.sound.add('snd_coin', { volume: 0.65 }),
     countdown: this.sound.add('snd_countdown', { volume: 0.9 }),
   };
   this.sound.volume = parseFloat(localStorage.getItem('soundVolume') ?? '0.5');
@@ -321,7 +321,7 @@ function checkCollisions(scene) {
     if (scene.playerSpeed <= COLLISION_MIN_SPEED) return;
     const theirStats = VEHICLE_STATS[p.vehicleType || 'f1'] || VEHICLE_STATS.f1;
     if (!obbOverlap(scene.playerBody.x, scene.playerBody.y, scene.playerAngle, myStats.hitL, myStats.hitW,
-                    p.x, p.y, theirStats.hitL, theirStats.hitW)) return;
+      p.x, p.y, theirStats.hitL, theirStats.hitW)) return;
     const toOther = Math.atan2(p.y - scene.playerBody.y, p.x - scene.playerBody.x);
     const localRad = Phaser.Math.DegToRad(scene.playerAngle);
     if (Math.cos(toOther - localRad) > 0) {
@@ -344,7 +344,7 @@ function isOverlappingAnyPlayer(scene) {
     if (p.dead) return false;
     const theirStats = VEHICLE_STATS[p.vehicleType || 'f1'] || VEHICLE_STATS.f1;
     return obbOverlap(scene.playerBody.x, scene.playerBody.y, scene.playerAngle, myStats.hitL, myStats.hitW,
-                      p.x, p.y, theirStats.hitL, theirStats.hitW);
+      p.x, p.y, theirStats.hitL, theirStats.hitW);
   });
 }
 
@@ -615,7 +615,7 @@ function update(time, delta) {
   this.playerBody.x += vx * (delta / 1000);
   this.playerBody.y += vy * (delta / 1000);
 
-    player.x = this.playerBody.x;
+  player.x = this.playerBody.x;
   player.y = this.playerBody.y;
   const turning = getTurningSuffix(vType, cursors, this.wasd, window.dpad);
   player.setTexture(getVehicleTexKey(vType, this.carIndex, turning));
@@ -624,7 +624,7 @@ function update(time, delta) {
   if (this.skidGfx && !isDead && !spawnProtection && !window.movementLocked) {
     const _dp = window.dpad || {};
     const isTurning = cursors.left.isDown || this.wasd.left.isDown || _dp.left ||
-                      cursors.right.isDown || this.wasd.right.isDown || _dp.right;
+      cursors.right.isDown || this.wasd.right.isDown || _dp.right;
     if (isTurning && this.playerSpeed > SKID_SPEED_THRESHOLD) {
       const perpRad = Phaser.Math.DegToRad(this.playerAngle + 90);
       const offset = SKID_OFFSETS[vType] ?? 10;
@@ -771,7 +771,7 @@ function checkPlacementValid(scene, x, y, type) {
   return true;
 }
 
-window.enterPlacementPhase = function(timeLimit, menuItems) {
+window.enterPlacementPhase = function (timeLimit, menuItems) {
   window.inPlacementPhase = true;
   window.movementLocked = true;
 
@@ -801,6 +801,7 @@ window.enterPlacementPhase = function(timeLimit, menuItems) {
     scene._otherGhosts = {};
     scene._lastGhostSend = 0;
 
+    // Red exclusion zone around finish (no obstacles allowed here)
     const zoneGfx = scene.add.graphics();
     zoneGfx.fillStyle(0xff3333, 0.18);
     zoneGfx.fillCircle(FINISH_ZONE_X, FINISH_ZONE_Y, FINISH_ZONE_RADIUS);
@@ -890,7 +891,7 @@ window.enterPlacementPhase = function(timeLimit, menuItems) {
   }, 1000);
 };
 
-window.exitPlacementPhase = function() {
+window.exitPlacementPhase = function () {
   window.inPlacementPhase = false;
 
   if (placementTimerInterval) { clearInterval(placementTimerInterval); placementTimerInterval = null; }
@@ -914,13 +915,25 @@ window.exitPlacementPhase = function() {
     vpW = GAME_W / normalZoom;
     vpH = GAME_H / normalZoom;
 
-    if (scene._domPointerMove) document.removeEventListener('pointermove', scene._domPointerMove);
-    if (scene._domPointerUp) document.removeEventListener('pointerup', scene._domPointerUp);
-    scene._domPointerMove = null;
-    scene._domPointerUp = null;
+    // Detach DOM event listeners
+    if (scene._domPointerMove) {
+      document.removeEventListener('pointermove', scene._domPointerMove);
+      scene._domPointerMove = null;
+    }
+    if (scene._domPointerUp) {
+      document.removeEventListener('pointerup', scene._domPointerUp);
+      scene._domPointerUp = null;
+    }
 
-    if (scene._exclusionZoneGfx) { scene._exclusionZoneGfx.destroy(); scene._exclusionZoneGfx = null; }
-    if (scene._ghostSprite) { scene._ghostSprite.destroy(); scene._ghostSprite = null; }
+    // Clean up temporary graphics and ghosts
+    if (scene._exclusionZoneGfx) {
+      scene._exclusionZoneGfx.destroy();
+      scene._exclusionZoneGfx = null;
+    }
+    if (scene._ghostSprite) {
+      scene._ghostSprite.destroy();
+      scene._ghostSprite = null;
+    }
     if (scene._otherGhosts) {
       Object.values(scene._otherGhosts).forEach(s => s.destroy());
       scene._otherGhosts = {};
@@ -949,7 +962,7 @@ window.exitPlacementPhase = function() {
   }
 };
 
-window.renderObstacles = function(obstacleList) {
+window.renderObstacles = function (obstacleList) {
   const scene = window.gameScene;
   if (!scene) return;
   if (scene.skidGfx) { scene.skidGfx.clear(); scene._skidCount = 0; }
@@ -965,12 +978,12 @@ window.renderObstacles = function(obstacleList) {
   });
 };
 
-window.markObstacleUsed = function(type) {
+window.markObstacleUsed = function (type) {
   const el = document.querySelector(`.obstacle-item[data-type="${type}"]`);
   if (el) el.classList.add('used');
 };
 
-window.handlePlayerGhostMove = function(sessionId, type, x, y, rotation) {
+window.handlePlayerGhostMove = function (sessionId, type, x, y, rotation) {
   const scene = window.gameScene;
   if (!scene || !window.inPlacementPhase) return;
   let sprite = scene._otherGhosts[sessionId];
@@ -990,7 +1003,7 @@ window.handlePlayerGhostMove = function(sessionId, type, x, y, rotation) {
   sprite.setAngle(rotation || 0);
 };
 
-window.lockPlayerObstacle = function(sessionId, obstacle) {
+window.lockPlayerObstacle = function (sessionId, obstacle) {
   const scene = window.gameScene;
   if (!scene) return;
   let sprite = scene._otherGhosts[sessionId];
@@ -1009,7 +1022,7 @@ window.lockPlayerObstacle = function(sessionId, obstacle) {
   sprite._locked = true;
 };
 
-window.selectObstacle = function(type) {
+window.selectObstacle = function (type) {
   const scene = window.gameScene;
   if (!scene || !window.inPlacementPhase || scene._hasConfirmed) return;
 
@@ -1039,7 +1052,7 @@ window.selectObstacle = function(type) {
   document.getElementById('obstacle-controls').style.display = 'none';
 };
 
-window.rotatePlacementGhost = function() {
+window.rotatePlacementGhost = function () {
   const scene = window.gameScene;
   if (!scene || !scene._ghostSprite) return;
   scene._obstacleRotation = ((scene._obstacleRotation || 0) + 90) % 360;
@@ -1049,7 +1062,7 @@ window.rotatePlacementGhost = function() {
   }
 };
 
-window.confirmObstaclePlacement = function() {
+window.confirmObstaclePlacement = function () {
   const scene = window.gameScene;
   if (!scene || !scene._ghostSprite || !scene._obstaclePlaced || scene._hasConfirmed) return;
   if (!scene._placementValid) return;
