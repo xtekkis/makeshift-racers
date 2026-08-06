@@ -154,6 +154,16 @@ function updateMinimapDots(scene, players, myId) {
   });
 }
 
+function getTurningSuffix(vType, cursors, wasd, dpad) {
+  if (vType !== 'f1') return '';
+  const _dpad = dpad || {};
+  const left = cursors.left.isDown || wasd.left.isDown || _dpad.left;
+  const right = cursors.right.isDown || wasd.right.isDown || _dpad.right;
+  if (left) return '_left';
+  if (right) return '_right';
+  return '';
+}
+
 function getVehicleTexKey(vType, carIndex, turning) {
   if (vType === 'truck') return 'truck_0';
   if (vType === 'moto') return 'moto_' + (carIndex % 4);
@@ -605,14 +615,9 @@ function update(time, delta) {
   this.playerBody.x += vx * (delta / 1000);
   this.playerBody.y += vy * (delta / 1000);
 
-  player.x = this.playerBody.x;
+    player.x = this.playerBody.x;
   player.y = this.playerBody.y;
-  let turning = '';
-  if (vType === 'f1' && !window.movementLocked) {
-    const _dpad = window.dpad || { left: false, right: false };
-    if (cursors.left.isDown || this.wasd.left.isDown || _dpad.left) turning = '_left';
-    else if (cursors.right.isDown || this.wasd.right.isDown || _dpad.right) turning = '_right';
-  }
+  const turning = getTurningSuffix(vType, cursors, this.wasd, window.dpad);
   player.setTexture(getVehicleTexKey(vType, this.carIndex, turning));
   player.setAngle(this.playerAngle + angleOffset);
 
