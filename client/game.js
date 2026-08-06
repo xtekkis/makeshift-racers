@@ -403,7 +403,7 @@ function update(time, delta) {
     window.incomingWrench = null;
   }
 
-  // spawn protection timer
+  // Spawn protection: keep invulnerable while overlapping other players
   if (spawnProtection) {
     spawnProtectionTimer -= delta;
     if (spawnProtectionTimer <= 0) {
