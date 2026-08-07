@@ -1,6 +1,6 @@
 const _isMobile = ('ontouchstart' in window) || window.matchMedia('(pointer: coarse)').matches;
-const GAME_W = _isMobile ? Math.max(window.screen.width, window.screen.height) : 1280;
-const GAME_H = _isMobile ? Math.min(window.screen.width, window.screen.height) : 720;
+const GAME_W = _isMobile ? Math.max(window.innerWidth, window.innerHeight) : 1280;
+const GAME_H = _isMobile ? Math.min(window.innerWidth, window.innerHeight) : 720;
 let vpHalfW = GAME_W / 2;
 let vpHalfH = GAME_H / 2;
 let vpW = GAME_W;
