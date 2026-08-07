@@ -155,7 +155,7 @@ function updateMinimapDots(scene, players, myId) {
 }
 
 function getTurningSuffix(vType, cursors, wasd, dpad) {
-  if (vType !== 'f1') return '';
+  if (vType !== 'f1' || window.movementLocked) return '';
   const _dpad = dpad || {};
   const left = cursors.left.isDown || wasd.left.isDown || _dpad.left;
   const right = cursors.right.isDown || wasd.right.isDown || _dpad.right;
