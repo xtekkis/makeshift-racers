@@ -859,6 +859,13 @@ window.enterPlacementPhase = function (timeLimit, menuItems, existingObstacles) 
     if (el) el.style.display = 'none';
   });
 
+  if (window.dpad) {
+    ['dpad-left', 'dpad-right'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+  }
+
   const menuEl = document.getElementById('placement-menu');
   if (menuEl && menuItems) {
     menuEl.innerHTML = '';
@@ -905,6 +912,13 @@ window.exitPlacementPhase = function () {
     const el = document.getElementById(id);
     if (el) el.style.display = 'block';
   });
+
+  if (window.dpad) {
+    ['dpad-left', 'dpad-right'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'flex';
+    });
+  }
 
   const scene = window.gameScene;
   const normalZoom = _isMobile ? 0.6 : 1;
