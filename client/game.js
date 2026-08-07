@@ -771,7 +771,7 @@ function checkPlacementValid(scene, x, y, type) {
   return true;
 }
 
-window.enterPlacementPhase = function (timeLimit, menuItems) {
+window.enterPlacementPhase = function (timeLimit, menuItems, existingObstacles) {
   window.inPlacementPhase = true;
   window.movementLocked = true;
 
@@ -796,7 +796,7 @@ window.enterPlacementPhase = function (timeLimit, menuItems) {
     scene._obstacleRotation = 0;
     scene._ghostSprite = null;
     scene._hasConfirmed = false;
-    scene._placedObstacles = [];
+    scene._placedObstacles = (existingObstacles || []).map(o => ({ x: o.x, y: o.y, type: o.type }));
     scene._placementValid = false;
     scene._otherGhosts = {};
     scene._lastGhostSend = 0;
