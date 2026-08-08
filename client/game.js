@@ -244,7 +244,10 @@ function create() {
     // track's own bounding box instead, so all four directions get equal room.
     const pathXs = this.track.path.map(p => p.x);
     const pathYs = this.track.path.map(p => p.y);
-    const CAM_BOUND_MARGIN = 400;
+    // Margin must comfortably exceed the viewport's own half-width/height, or the
+    // clamp still engages near the track's own extremes (e.g. right at race start,
+    // which sits at the track's leftmost point) - not just at the world's edges.
+    const CAM_BOUND_MARGIN = Math.max(vpHalfW, vpHalfH) + 300;
     this.camClampMinX = Math.min(...pathXs) - CAM_BOUND_MARGIN;
     this.camClampMaxX = Math.max(...pathXs) + CAM_BOUND_MARGIN;
     this.camClampMinY = Math.min(...pathYs) - CAM_BOUND_MARGIN;

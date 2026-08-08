@@ -306,7 +306,7 @@
     }
 
     @media (pointer: coarse) and (orientation: portrait) {
-      #rotate-overlay {
+      body.game-active #rotate-overlay {
         display: flex;
       }
     }
@@ -1161,6 +1161,7 @@
       window.gameSocket = lobbySocket;
       document.getElementById('lobby').style.display = 'none';
       document.getElementById('game').style.display = 'block';
+      document.body.classList.add('game-active');
 
       const scripts = [
         'node_modules/phaser/dist/phaser.min.js',
