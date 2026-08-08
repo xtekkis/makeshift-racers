@@ -524,7 +524,7 @@
     }
 
     body.touch-device #lobby h1 {
-      display: none;
+      font-size: 20px;
     }
 
     body.touch-device .vtab {
@@ -1168,7 +1168,7 @@
 
       const scripts = [
         'node_modules/phaser/dist/phaser.min.js',
-        'track.js', 'indicators.js', 'powerups.js', 'scoreboard.js', 'network.js', 'mobile-controls.js', 'game.js'
+        'track.js', 'indicators.js', 'powerups.js', 'scoreboard.js', 'network.js', 'game.js'
       ];
 
       function loadScript(i) {
@@ -1181,6 +1181,7 @@
       loadScript(0);
     }
   </script>
+  <script src="mobile-controls.js"></script>
 </body>
 
 </html>
