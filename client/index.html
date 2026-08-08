@@ -493,7 +493,10 @@
     }
 
     body.touch-device .players-grid {
-      gap: 10px;
+      display: grid;
+      grid-template-columns: repeat(2, 110px);
+      justify-content: center;
+      gap: 6px 10px;
     }
 
     body.touch-device .player-slot {
