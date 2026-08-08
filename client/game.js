@@ -295,7 +295,7 @@ function create() {
 
 const CAM_LOOKAHEAD_RATIO_X = 300 / 640; // tuned at desktop's 1280x720 canvas, zoom 1
 const CAM_LOOKAHEAD_RATIO_Y = 160 / 360;
-const CAM_LOOKAHEAD_MOBILE_MULT = 0.55; // mobile screens are smaller in absolute terms, so lean less toward the front edge
+const CAM_LOOKAHEAD_MOBILE_MULT = 0.35; // mobile screens are smaller in absolute terms, so lean less toward the front edge
 
 function getTargetOffset(direction) {
   const mult = _isMobile ? CAM_LOOKAHEAD_MOBILE_MULT : 1;
