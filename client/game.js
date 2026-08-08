@@ -1052,8 +1052,7 @@ window.selectObstacle = function (type) {
   scene._obstacleRotation = 0;
   scene._obstaclePlaced = false;
 
-  const ptr = scene.input.activePointer;
-  const wp = scene.cameras.main.getWorldPoint(ptr.x || GAME_W / 2, ptr.y || GAME_H / 2);
+  const wp = { x: MINIMAP_CENTER_X, y: MINIMAP_CENTER_Y };
   scene._ghostSprite = scene.add.image(wp.x, wp.y, type);
   scene._ghostSprite.setAlpha(0.6);
   scene._ghostSprite.setScale(OBSTACLE_SCALES[type] || 0.5);
