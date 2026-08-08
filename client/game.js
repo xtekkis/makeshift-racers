@@ -928,7 +928,7 @@ window.enterPlacementPhase = function (timeLimit, menuItems, existingObstacles) 
       img.src = 'assets/obstacles/' + type + '.png';
       img.alt = type;
       item.appendChild(img);
-      item.addEventListener('pointerdown', (e) => { e.preventDefault(); if (window.selectObstacle) window.selectObstacle(type); });
+      item.addEventListener('pointerdown', (e) => { e.preventDefault(); if (window.selectObstacle) window.selectObstacle(type, e); });
       menuEl.appendChild(item);
     });
     menuEl.style.display = 'flex';
@@ -1092,7 +1092,7 @@ window.lockPlayerObstacle = function (sessionId, obstacle) {
   sprite._locked = true;
 };
 
-window.selectObstacle = function (type) {
+window.selectObstacle = function (type, e) {
   const scene = window.gameScene;
   if (!scene || !window.inPlacementPhase || scene._hasConfirmed) return;
 
@@ -1106,7 +1106,7 @@ window.selectObstacle = function (type) {
   scene._obstacleRotation = 0;
   scene._obstaclePlaced = false;
 
-  const wp = { x: MINIMAP_CENTER_X, y: MINIMAP_CENTER_Y };
+  const wp = (e && getGhostWorldPoint(scene, e)) || { x: MINIMAP_CENTER_X, y: MINIMAP_CENTER_Y };
   scene._ghostSprite = scene.add.image(wp.x, wp.y, type);
   scene._ghostSprite.setAlpha(0.6);
   scene._ghostSprite.setScale(OBSTACLE_SCALES[type] || 0.5);
@@ -1115,6 +1115,8 @@ window.selectObstacle = function (type) {
   const initValid = checkPlacementValid(scene, wp.x, wp.y, type);
   scene._placementValid = initValid;
   scene._ghostSprite.setTint(initValid ? 0xffffff : 0xff4444);
+
+  if (e) scene._isDragging = true;
 
   const confirmBtn = document.getElementById('obstacle-confirm');
   if (confirmBtn) confirmBtn.disabled = false;
