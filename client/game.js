@@ -237,6 +237,25 @@ function create() {
   vpH = GAME_H / CAM_ZOOM;
   this.physics.world.setBounds(0, 0, 6000, 5000);
 
+  if (_isMobile) {
+    // The track sits off-center within the 6000x5000 world (much closer to the
+    // left/top edges than the right/bottom), so clamping the camera to the raw
+    // world bounds gives unequal slack per direction. Clamp relative to the
+    // track's own bounding box instead, so all four directions get equal room.
+    const pathXs = this.track.path.map(p => p.x);
+    const pathYs = this.track.path.map(p => p.y);
+    const CAM_BOUND_MARGIN = 400;
+    this.camClampMinX = Math.min(...pathXs) - CAM_BOUND_MARGIN;
+    this.camClampMaxX = Math.max(...pathXs) + CAM_BOUND_MARGIN;
+    this.camClampMinY = Math.min(...pathYs) - CAM_BOUND_MARGIN;
+    this.camClampMaxY = Math.max(...pathYs) + CAM_BOUND_MARGIN;
+  } else {
+    this.camClampMinX = 0;
+    this.camClampMaxX = 6000;
+    this.camClampMinY = 0;
+    this.camClampMaxY = 5000;
+  }
+
   window.gameScene = this;
   window.inPlacementPhase = false;
   this.otherPlayers = {};
@@ -427,8 +446,8 @@ function update(time, delta) {
     const target = getTargetOffset(direction);
     camOffsetX += (target.x - camOffsetX) * CAM_LERP;
     camOffsetY += (target.y - camOffsetY) * CAM_LERP;
-    const scrollX = Math.max(0, Math.min(leaderX - vpHalfW + camOffsetX, 6000 - vpW));
-    const scrollY = Math.max(0, Math.min(leaderY - vpHalfH + camOffsetY, 5000 - vpH));
+    const scrollX = Math.max(this.camClampMinX, Math.min(leaderX - vpHalfW + camOffsetX, this.camClampMaxX - vpW));
+    const scrollY = Math.max(this.camClampMinY, Math.min(leaderY - vpHalfH + camOffsetY, this.camClampMaxY - vpH));
     this.cameras.main.setScroll(scrollX, scrollY);
 
     if (window.lastPlayers) {
@@ -462,8 +481,8 @@ function update(time, delta) {
     const target = getTargetOffset(direction);
     camOffsetX += (target.x - camOffsetX) * CAM_LERP;
     camOffsetY += (target.y - camOffsetY) * CAM_LERP;
-    const scrollX = Math.max(0, Math.min(leaderX - vpHalfW + camOffsetX, 6000 - vpW));
-    const scrollY = Math.max(0, Math.min(leaderY - vpHalfH + camOffsetY, 5000 - vpH));
+    const scrollX = Math.max(this.camClampMinX, Math.min(leaderX - vpHalfW + camOffsetX, this.camClampMaxX - vpW));
+    const scrollY = Math.max(this.camClampMinY, Math.min(leaderY - vpHalfH + camOffsetY, this.camClampMaxY - vpH));
     this.cameras.main.setScroll(scrollX, scrollY);
 
     if (this.skidGfx && !spawnProtection) {
@@ -524,8 +543,8 @@ function update(time, delta) {
   camOffsetX += (target.x - camOffsetX) * CAM_LERP;
   camOffsetY += (target.y - camOffsetY) * CAM_LERP;
 
-  const scrollX = Math.max(0, Math.min(leaderX - vpHalfW + camOffsetX, 6000 - vpW));
-  const scrollY = Math.max(0, Math.min(leaderY - vpHalfH + camOffsetY, 5000 - vpH));
+  const scrollX = Math.max(this.camClampMinX, Math.min(leaderX - vpHalfW + camOffsetX, this.camClampMaxX - vpW));
+  const scrollY = Math.max(this.camClampMinY, Math.min(leaderY - vpHalfH + camOffsetY, this.camClampMaxY - vpH));
   this.cameras.main.setScroll(scrollX, scrollY);
 
   const isOutOfView =
