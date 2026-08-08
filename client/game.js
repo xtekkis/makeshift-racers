@@ -80,7 +80,7 @@ const DECEL_BRAKE = 24;
 const FINISH_STOP_FRAMES = 112.5; // frames to decelerate from a vehicle's maxSpeed to 0 at the finish line
 const DEATH_DURATION = 2000;
 const COLLISION_MIN_SPEED = 80;
-const CAM_LERP = 0.05;
+const CAM_LERP = 0.08;
 const FRAME_MS = 1000 / 60;
 const NUM_CAR_VARIANTS = 8;
 
@@ -521,8 +521,8 @@ function update(time, delta) {
   const direction = window.leaderDirection || 'left';
 
   const target = getTargetOffset(direction);
-  camOffsetX += (target.x - camOffsetX) * 0.05;
-  camOffsetY += (target.y - camOffsetY) * 0.05;
+  camOffsetX += (target.x - camOffsetX) * CAM_LERP;
+  camOffsetY += (target.y - camOffsetY) * CAM_LERP;
 
   const scrollX = Math.max(0, Math.min(leaderX - vpHalfW + camOffsetX, 6000 - vpW));
   const scrollY = Math.max(0, Math.min(leaderY - vpHalfH + camOffsetY, 5000 - vpH));
