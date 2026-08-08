@@ -295,7 +295,7 @@ function create() {
 
 const CAM_LOOKAHEAD_RATIO_X = 300 / 640; // tuned at desktop's 1280x720 canvas, zoom 1
 const CAM_LOOKAHEAD_RATIO_Y = 160 / 360;
-const CAM_LOOKAHEAD_MOBILE_MULT = 0.35; // mobile screens are smaller in absolute terms, so lean less toward the front edge
+const CAM_LOOKAHEAD_MOBILE_MULT = 0.1; // mobile screens are smaller in absolute terms, so lean much less toward the front edge
 
 function getTargetOffset(direction) {
   const mult = _isMobile ? CAM_LOOKAHEAD_MOBILE_MULT : 1;
@@ -760,6 +760,28 @@ window.setCoins = (n) => {
 };
 window.setHeldItem = (item) => { myHeldItem = item; updateItemHUD(); };
 
+function getGhostWorldPoint(scene, e) {
+  const canvas = scene.game.canvas;
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const cx = e.clientX !== undefined ? e.clientX : (e.touches ? e.touches[0].clientX : null);
+  const cy = e.clientY !== undefined ? e.clientY : (e.touches ? e.touches[0].clientY : null);
+  if (cx === null) return null;
+  const canvasX = (cx - rect.left) * scaleX;
+  const canvasY = (cy - rect.top) * scaleY;
+  return scene.cameras.main.getWorldPoint(canvasX, canvasY);
+}
+
+function isOverPlacementUI(e) {
+  return ['placement-menu', 'obstacle-controls'].some(id => {
+    const el = document.getElementById(id);
+    if (!el || el.style.display === 'none') return false;
+    const r = el.getBoundingClientRect();
+    return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+  });
+}
+
 function checkPlacementValid(scene, x, y, type) {
   if (scene.track.isOffTrack(x, y)) return false;
   const fdx = x - FINISH_ZONE_X, fdy = y - FINISH_ZONE_Y;
@@ -812,18 +834,25 @@ window.enterPlacementPhase = function (timeLimit, menuItems, existingObstacles) 
     zoneGfx.setDepth(0.5);
     scene._exclusionZoneGfx = zoneGfx;
 
+    scene._isDragging = false;
+
+    scene._domPointerDown = (e) => {
+      if (!scene._selectedObstacleType || !scene._ghostSprite || scene._hasConfirmed) return;
+      if (isOverPlacementUI(e)) return;
+      const wp = getGhostWorldPoint(scene, e);
+      if (!wp) return;
+      scene._isDragging = true;
+      scene._obstaclePlaced = false;
+      document.getElementById('obstacle-controls').style.display = 'none';
+      scene._ghostSprite.setPosition(wp.x, wp.y);
+      const valid = checkPlacementValid(scene, wp.x, wp.y, scene._selectedObstacleType);
+      scene._placementValid = valid;
+      scene._ghostSprite.setTint(valid ? 0xffffff : 0xff4444);
+    };
     scene._domPointerMove = (e) => {
-      if (!scene._ghostSprite || scene._obstaclePlaced) return;
-      const canvas = scene.game.canvas;
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
-      const cx = e.clientX !== undefined ? e.clientX : (e.touches ? e.touches[0].clientX : null);
-      const cy = e.clientY !== undefined ? e.clientY : (e.touches ? e.touches[0].clientY : null);
-      if (cx === null) return;
-      const canvasX = (cx - rect.left) * scaleX;
-      const canvasY = (cy - rect.top) * scaleY;
-      const wp = scene.cameras.main.getWorldPoint(canvasX, canvasY);
+      if (!scene._isDragging || !scene._ghostSprite) return;
+      const wp = getGhostWorldPoint(scene, e);
+      if (!wp) return;
       scene._ghostSprite.setPosition(wp.x, wp.y);
       const valid = checkPlacementValid(scene, wp.x, wp.y, scene._selectedObstacleType);
       scene._placementValid = valid;
@@ -834,13 +863,10 @@ window.enterPlacementPhase = function (timeLimit, menuItems, existingObstacles) 
         scene._lastGhostSend = now;
       }
     };
-    scene._domPointerUp = (e) => {
-      if (!scene._selectedObstacleType || scene._obstaclePlaced || !scene._ghostSprite) return;
-      const menuEl = document.getElementById('placement-menu');
-      if (menuEl) {
-        const r = menuEl.getBoundingClientRect();
-        if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) return;
-      }
+    scene._domPointerUp = () => {
+      if (!scene._isDragging) return;
+      scene._isDragging = false;
+      if (!scene._selectedObstacleType || !scene._ghostSprite || scene._hasConfirmed) return;
       scene._obstaclePlaced = true;
       const valid = checkPlacementValid(scene, scene._ghostSprite.x, scene._ghostSprite.y, scene._selectedObstacleType);
       scene._placementValid = valid;
@@ -850,6 +876,7 @@ window.enterPlacementPhase = function (timeLimit, menuItems, existingObstacles) 
       const confirmBtn = document.getElementById('obstacle-confirm');
       if (confirmBtn) confirmBtn.disabled = !valid;
     };
+    document.addEventListener('pointerdown', scene._domPointerDown);
     document.addEventListener('pointermove', scene._domPointerMove);
     document.addEventListener('pointerup', scene._domPointerUp);
 
@@ -932,6 +959,10 @@ window.exitPlacementPhase = function () {
     vpH = GAME_H / normalZoom;
 
     // Detach DOM event listeners
+    if (scene._domPointerDown) {
+      document.removeEventListener('pointerdown', scene._domPointerDown);
+      scene._domPointerDown = null;
+    }
     if (scene._domPointerMove) {
       document.removeEventListener('pointermove', scene._domPointerMove);
       scene._domPointerMove = null;
@@ -940,6 +971,7 @@ window.exitPlacementPhase = function () {
       document.removeEventListener('pointerup', scene._domPointerUp);
       scene._domPointerUp = null;
     }
+    scene._isDragging = false;
 
     // Clean up temporary graphics and ghosts
     if (scene._exclusionZoneGfx) {
