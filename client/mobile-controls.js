@@ -2,7 +2,6 @@
   if (!('ontouchstart' in window) && !window.matchMedia('(pointer: coarse)').matches) return;
 
   document.body.classList.add('touch-device');
-  document.body.style.overflow = 'hidden';
 
   window.dpad = { left: false, right: false, up: false, down: false };
   window.mobileItemPressed = false;
