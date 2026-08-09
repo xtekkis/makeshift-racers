@@ -311,6 +311,36 @@
       }
     }
 
+    #lobby-rotate-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 400;
+      background: #0d0d1a;
+      color: white;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 12px;
+      padding: 24px;
+    }
+
+    #lobby-rotate-overlay h2 {
+      font-size: 22px;
+    }
+
+    #lobby-rotate-overlay p {
+      font-size: 14px;
+      color: #aaa;
+    }
+
+    @media (pointer: coarse) and (orientation: landscape) {
+      body.touch-device:not(.game-active) #lobby-rotate-overlay {
+        display: flex;
+      }
+    }
+
     #scoreboard-title {
       font-size: 32px;
       font-weight: bold;
@@ -494,84 +524,84 @@
 
     body.touch-device .players-grid {
       display: grid;
-      grid-template-columns: repeat(2, 110px);
+      grid-template-columns: repeat(2, 130px);
       justify-content: center;
-      gap: 6px 10px;
+      gap: 12px 16px;
     }
 
     body.touch-device .player-slot {
-      width: 110px;
-      gap: 2px;
+      width: 130px;
+      gap: 6px;
     }
 
     body.touch-device .player-car-box {
-      width: 110px;
-      height: 50px;
+      width: 130px;
+      height: 65px;
     }
 
     body.touch-device .player-car-box img {
-      height: 40px;
+      height: 52px;
     }
 
     body.touch-device .player-name,
     body.touch-device .ready-status {
-      font-size: 11px;
+      font-size: 13px;
     }
 
     body.touch-device #lobby {
-      gap: 6px;
-      padding: 6px 10px;
+      gap: 16px;
+      padding: 16px 12px;
     }
 
     body.touch-device #lobby h1 {
-      font-size: 20px;
+      font-size: 26px;
     }
 
     body.touch-device .vtab {
-      padding: 4px 14px;
-      font-size: 11px;
+      padding: 6px 18px;
+      font-size: 13px;
     }
 
     body.touch-device .color-picker,
     body.touch-device .color-row {
-      gap: 4px;
+      gap: 10px;
     }
 
     body.touch-device .color-swatch {
-      width: 34px;
-      height: 46px;
+      width: 48px;
+      height: 72px;
     }
 
     body.touch-device .my-setup {
-      gap: 4px;
+      gap: 10px;
     }
 
     body.touch-device .car-preview {
-      width: 50px;
-      height: 60px;
+      width: 70px;
+      height: 100px;
     }
 
     body.touch-device #nameInput {
-      padding: 4px 10px;
-      font-size: 12px;
-      width: 140px;
+      padding: 6px 14px;
+      font-size: 14px;
+      width: 180px;
     }
 
     body.touch-device #readyBtn {
-      padding: 5px 20px;
-      font-size: 12px;
+      padding: 8px 28px;
+      font-size: 14px;
     }
 
     body.touch-device #volume-control {
-      gap: 2px;
+      gap: 4px;
     }
 
     body.touch-device #volume-label {
-      font-size: 9px;
+      font-size: 11px;
     }
 
     body.touch-device #volumeSlider {
-      width: 100px;
+      width: 140px;
     }
 
     body.touch-device #placement-menu {
@@ -622,6 +652,14 @@
       gap: 8px;
       z-index: 50;
       touch-action: none;
+    }
+
+    body.touch-device.game-active #dpad-left {
+      display: flex;
+    }
+
+    body.touch-device.game-active #dpad-right {
+      display: flex;
     }
 
     #dpad-steer {
@@ -950,6 +988,11 @@
   <div id="rotate-overlay">
     <h2>Rotate your device</h2>
     <p>This game is played in landscape mode. Turn your phone sideways to continue.</p>
+  </div>
+
+  <div id="lobby-rotate-overlay">
+    <h2>Rotate to portrait</h2>
+    <p>Please use portrait mode to browse the lobby.</p>
   </div>
 
   <script>

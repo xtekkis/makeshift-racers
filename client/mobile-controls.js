@@ -4,11 +4,6 @@
   document.body.classList.add('touch-device');
   document.body.style.overflow = 'hidden';
 
-  const dpadLeft = document.getElementById('dpad-left');
-  const dpadRight = document.getElementById('dpad-right');
-  if (dpadLeft) dpadLeft.style.display = 'flex';
-  if (dpadRight) dpadRight.style.display = 'flex';
-
   window.dpad = { left: false, right: false, up: false, down: false };
   window.mobileItemPressed = false;
   window.scorebarMaxHeight = 110;
