@@ -830,7 +830,7 @@ window.enterPlacementPhase = function (timeLimit, menuItems, existingObstacles) 
     if (scene.minimapBg) scene.minimapBg.setVisible(false);
     if (scene.minimapDots) scene.minimapDots.setVisible(false);
 
-    const pZoom = Math.min(GAME_W / 3400, GAME_H / 2500);
+    const pZoom = Math.min(GAME_W / 4000, GAME_H / 3000);
     const pScrollX = 2000 - GAME_W / 2;
     const pScrollY = 2600 - GAME_H / 2;
     scene.cameras.main.setZoom(pZoom);
