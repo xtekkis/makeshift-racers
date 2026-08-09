@@ -228,14 +228,18 @@ function create() {
   this.playerAngle = 180;
   this.playerSpeed = 0;
 
-  this.cameras.main.setBounds(0, 0, 6000, 5000);
+  // Extended well beyond the track's actual footprint (bounding box roughly
+  // x:[600,3400] y:[1600,3600]) so the placement/race cameras have generous,
+  // symmetric buffer on every side to zoom out into without ever hitting this
+  // boundary and having Phaser silently override the intended scroll position.
+  this.cameras.main.setBounds(-2200, -1600, 8400, 8400);
   const CAM_ZOOM = _isMobile ? 0.6 : 1;
   this.cameras.main.setZoom(CAM_ZOOM);
   vpHalfW = GAME_W / (2 * CAM_ZOOM);
   vpHalfH = GAME_H / (2 * CAM_ZOOM);
   vpW = GAME_W / CAM_ZOOM;
   vpH = GAME_H / CAM_ZOOM;
-  this.physics.world.setBounds(0, 0, 6000, 5000);
+  this.physics.world.setBounds(-2200, -1600, 8400, 8400);
 
   if (_isMobile) {
     // The track sits off-center within the 6000x5000 world (much closer to the
@@ -253,10 +257,10 @@ function create() {
     this.camClampMinY = Math.min(...pathYs) - CAM_BOUND_MARGIN;
     this.camClampMaxY = Math.max(...pathYs) + CAM_BOUND_MARGIN;
   } else {
-    this.camClampMinX = 0;
-    this.camClampMaxX = 6000;
-    this.camClampMinY = 0;
-    this.camClampMaxY = 5000;
+    this.camClampMinX = -2200;
+    this.camClampMaxX = 6200;
+    this.camClampMinY = -1600;
+    this.camClampMaxY = 6800;
   }
 
   window.gameScene = this;
@@ -830,13 +834,7 @@ window.enterPlacementPhase = function (timeLimit, menuItems, existingObstacles) 
     if (scene.minimapBg) scene.minimapBg.setVisible(false);
     if (scene.minimapDots) scene.minimapDots.setVisible(false);
 
-    // Track center (2000,2600) sits closer to the world's left/top edges than its
-    // right/bottom edges, so a view can't exceed ~4000 wide / ~4800 tall while
-    // staying centered on it - wider than that and Phaser's setBounds() clamp
-    // overrides the scroll, visibly shifting the track off-center. Zoom out as
-    // much as desired but never past that safe limit on either axis.
-    const desiredZoom = Math.min(GAME_W / 4000, GAME_H / 3000);
-    const pZoom = Math.max(desiredZoom, GAME_W / 4000, GAME_H / 4800);
+    const pZoom = Math.min(GAME_W / 4800, GAME_H / 3600);
     const pScrollX = 2000 - GAME_W / 2;
     const pScrollY = 2600 - GAME_H / 2;
     scene.cameras.main.setZoom(pZoom);
