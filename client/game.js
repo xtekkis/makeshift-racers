@@ -830,7 +830,13 @@ window.enterPlacementPhase = function (timeLimit, menuItems, existingObstacles) 
     if (scene.minimapBg) scene.minimapBg.setVisible(false);
     if (scene.minimapDots) scene.minimapDots.setVisible(false);
 
-    const pZoom = Math.min(GAME_W / 4000, GAME_H / 3000);
+    // Track center (2000,2600) sits closer to the world's left/top edges than its
+    // right/bottom edges, so a view can't exceed ~4000 wide / ~4800 tall while
+    // staying centered on it - wider than that and Phaser's setBounds() clamp
+    // overrides the scroll, visibly shifting the track off-center. Zoom out as
+    // much as desired but never past that safe limit on either axis.
+    const desiredZoom = Math.min(GAME_W / 4000, GAME_H / 3000);
+    const pZoom = Math.max(desiredZoom, GAME_W / 4000, GAME_H / 4800);
     const pScrollX = 2000 - GAME_W / 2;
     const pScrollY = 2600 - GAME_H / 2;
     scene.cameras.main.setZoom(pZoom);
