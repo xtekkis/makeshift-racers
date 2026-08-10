@@ -321,10 +321,13 @@ function create() {
 
 const CAM_LOOKAHEAD_RATIO_X = 300 / 640; // tuned at desktop's 1280x720 canvas, zoom 1
 const CAM_LOOKAHEAD_RATIO_Y = 160 / 360;
-const CAM_LOOKAHEAD_MOBILE_MULT = 0.1; // mobile screens are smaller in absolute terms, so lean much less toward the front edge
+// Per-direction, mobile only. left/down already feel correct at a small bias;
+// up/right need more of the front-edge lean restored so trailing players
+// (visible in the "behind" portion of the shared camera) stay easy to track.
+const CAM_LOOKAHEAD_MOBILE_MULT = { left: 0.1, right: 0.4, up: 0.4, down: 0.1 };
 
 function getTargetOffset(direction) {
-  const mult = _isMobile ? CAM_LOOKAHEAD_MOBILE_MULT : 1;
+  const mult = _isMobile ? (CAM_LOOKAHEAD_MOBILE_MULT[direction] ?? 1) : 1;
   const offX = vpHalfW * CAM_LOOKAHEAD_RATIO_X * mult;
   const offY = vpHalfH * CAM_LOOKAHEAD_RATIO_Y * mult;
   switch (direction) {
